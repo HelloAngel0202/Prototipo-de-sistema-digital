@@ -1,21 +1,23 @@
 import './Navbar.css';
+import { Link } from 'react-router-dom';
 
 function Navbar() {
 
     return (
         <header className='navbar'>
             <div className="navbar-logo">
-                {/* Aqui poner el logo que usaremos en la pagina */}
-                <h2>Gestor de préstamos</h2>
+                <Link to="/" style={{ color: 'inherit', textDecoration: 'none' }}>
+                    <h2>Gestor de prestamos</h2>
+                </Link>
             </div>
             <nav className="navbar-links">
-                <a href="#Dashboard">Inicio</a>
+                <Link to="/">Inicio</Link>
                 <a href="#information">Cómo funciona</a>
                 <a href="#banks">Prestamistas</a>
             </nav>
             <div className="navbar-actions">
-                <button className='btn-login'>Iniciar Sesión</button>
-                <button className='btn-register'>Registrarse</button>
+                <Link className='btn-login' to="/login">Iniciar Sesión</Link>
+                <Link className='btn-register' to="/register">Registrarse</Link>
             </div>
         </header>
     );
