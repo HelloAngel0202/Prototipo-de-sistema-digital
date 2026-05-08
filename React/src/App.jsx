@@ -5,6 +5,7 @@ import Home from './components/Home/Home';
 import Register from './components/Auth/Register';
 import Login from './components/Auth/Login';
 import ClientDashboard from './components/Dashboard/ClientDashboard';
+import LoanRequestForm from './components/LoanRequest/LoanRequestForm';
 
 function App() {
 
@@ -19,8 +20,12 @@ function App() {
         <Route path='/' element={<Home />} />
         <Route path='/login' element={user ? <Navigate to="/dashboard" /> : <Login setUser={setUser} />} />
         <Route path='/register' element={user ? <Navigate to="/dashboard" /> : <Register setUser={setUser} />} />
+       
+        <Route path="/new-request" element={
+          user ? <LoanRequestForm user={user} /> : <Navigate to="/login" />
+        } />
 
-        <Route  path='/dashboard' element={
+        <Route path='/dashboard' element={
           user ? (<ClientDashboard user={user} />) : (
             <Navigate to="/login" />
           )

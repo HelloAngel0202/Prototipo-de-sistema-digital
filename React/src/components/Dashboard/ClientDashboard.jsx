@@ -1,7 +1,8 @@
 import './ClientDashboard.css';
+import { Link } from 'react-router-dom';
 
 function ClientDashboard({ user }) {
-    
+
   // Datos simulados hasta que se conecte con el backend de angel 
   const stats = {
     valoracion: 4.8,
@@ -49,7 +50,7 @@ function ClientDashboard({ user }) {
         <div className="action-card primary">
           <h2>¿Necesitas financiamiento?</h2>
           <p>Crea una nueva solicitud anónima y recibe ofertas de bancos verificados.</p>
-          <button className="btn-action">Nueva Solicitud Anónima</button>
+          <Link to="/new-request" className='btn-action'>Nueva Solicitud Anónima</Link>
         </div>
       </section>
 
