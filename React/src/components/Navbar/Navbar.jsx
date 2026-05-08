@@ -23,7 +23,7 @@ function Navbar({ user }) {
                         <button className='btn-logout' onClick={() => window.location.reload()}> Salir </button>
                     </div>
                 ) : (
-                    <div>
+                    <div className="">
                         <Link className='btn-login' to="/login">Iniciar Sesión</Link>
                         <Link className='btn-register' to="/register">Registrarse</Link>
                     </div>
