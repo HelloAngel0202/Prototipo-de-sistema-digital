@@ -1,10 +1,15 @@
-import './App.css';
+import Navbar from './components/Navbar/Navbar';
+import Register from './components/Auth/Register';
+import Login from './components/Auth/Login';
 
 function App() {
   return (
-    <div className="app-container">
-      <h1>Gestor de Préstamos</h1>
-      <p>Bienvenido al sistema de administración.</p>
+    <div className="App">
+      <Navbar />
+      <main>
+        <h2>Sistema gestor de prestamos</h2>
+      </main>
+      <Register />
     </div>
   );
 }
