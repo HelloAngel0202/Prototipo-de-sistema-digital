@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import "./Register.css";
+import { Link } from "react-router-dom";
 
 function Register() {
     const [name, setName] = useState('');
@@ -49,7 +50,7 @@ function Register() {
                 <button type="submit" className="btn-auth">Registrarse</button>
 
                 <p className="auth-switch">
-                    ¿Ya tienes cuenta? <a href="#login">Inicia Sesión</a>
+                    ¿Ya tienes cuenta? <Link to={"/login"}> Inicia Sesión</Link>
                 </p>
             </form>
         </div>

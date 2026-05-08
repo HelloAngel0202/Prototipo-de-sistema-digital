@@ -1,5 +1,6 @@
 import { Routes, Route } from 'react-router-dom';
 import Navbar from './components/Navbar/Navbar';
+import Home from './components/Home/Home';
 import Register from './components/Auth/Register';
 import Login from './components/Auth/Login';
 
@@ -9,11 +10,7 @@ function App() {
 
       <Navbar />
       <Routes>
-        <Route path='/' element={
-          <main>
-            <h2>Sistema gestor de prestamos</h2>
-          </main>
-        }
+        <Route path='/' element={ <Home />}
         />
         <Route path='/login' element={<Login />}/>
         <Route path='/register' element={<Register />}/>
