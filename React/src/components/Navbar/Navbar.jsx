@@ -19,7 +19,7 @@ function Navbar({ user }) {
             <div className="navbar-actions">
                 {user ? (
                     <div className="user-profile-nav">
-                        <span>Hola, <strong>{user.name}</strong></span>
+                        <span>Hola , <strong>{user.name}</strong> </span>
                         <button className='btn-logout' onClick={() => window.location.reload()}> Salir </button>
                     </div>
                 ) : (
