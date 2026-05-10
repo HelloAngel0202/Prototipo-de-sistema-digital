@@ -1,5 +1,6 @@
 import './ClientDashboard.css';
 import { Link } from 'react-router-dom';
+import OfferList from '../Offers/OfferList';
 
 function ClientDashboard({ user }) {
 
@@ -68,6 +69,8 @@ function ClientDashboard({ user }) {
           </div>
         </div>
       </section>
+
+      <OfferList />
     </div>
   );
 }
