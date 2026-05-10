@@ -6,10 +6,11 @@ import Register from './components/Auth/Register';
 import Login from './components/Auth/Login';
 import ClientDashboard from './components/Dashboard/ClientDashboard';
 import LoanRequestForm from './components/LoanRequest/LoanRequestForm';
+import BankDashboard from './components/Dashboard/BankDashboard';
 
 function App() {
 
-  const [user, setUser] = useState({ name: "JC Castillo", role: "client" });
+  const [user, setUser] = useState({ name: "Banco Santa Cruz", role: "lender" });
   // const [user, setUser] = useState(null);
 
   return (
@@ -26,9 +27,7 @@ function App() {
         } />
 
         <Route path='/dashboard' element={
-          user ? (<ClientDashboard user={user} />) : (
-            <Navigate to="/login" />
-          )
+          user ? (user.role === 'lender' ? (<BankDashboard user={user}/>) : (<ClientDashboard user={user}/>)) : (<Navigate to={"/login"} />) 
         }
         />
       </Routes>

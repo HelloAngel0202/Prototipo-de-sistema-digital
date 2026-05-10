@@ -1,0 +1,77 @@
+.lender-container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 2rem;
+}
+
+.lender-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: var(--color-secondary);
+  color: white;
+  padding: 2rem;
+  border-radius: 15px;
+  margin-bottom: 3rem;
+}
+
+.stat-box {
+  background: rgba(255, 255, 255, 0.1);
+  padding: 1rem;
+  border-radius: 10px;
+  text-align: right;
+}
+
+.stat-box span { display: block; font-size: 0.8rem; opacity: 0.8; }
+.stat-box strong { font-size: 1.4rem; }
+
+.feed-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+  gap: 1.5rem;
+  margin-top: 1.5rem;
+}
+
+.request-feed-card {
+  background: white;
+  border: 1px solid #eee;
+  padding: 1.5rem;
+  border-radius: 12px;
+  transition: all 0.3s;
+}
+
+.request-feed-card:hover {
+  border-color: var(--color-primary);
+  box-shadow: 0 5px 15px rgba(0,0,0,0.05);
+}
+
+.card-top {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 1rem;
+}
+
+.amount-tag {
+  font-weight: bold;
+  font-size: 1.2rem;
+  color: var(--color-secondary);
+}
+
+.request-reason {
+  font-style: italic;
+  color: var(--color-text-main);
+  margin-bottom: 1.5rem;
+  height: 3rem;
+  overflow: hidden;
+}
+
+.btn-offer {
+  background: var(--color-primary);
+  color: white;
+  border: none;
+  padding: 0.6rem 1rem;
+  margin: auto 10px;
+  border-radius: 6px;
+  font-weight: bold;
+  cursor: pointer;
+}
