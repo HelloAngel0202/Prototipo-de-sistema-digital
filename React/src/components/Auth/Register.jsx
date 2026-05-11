@@ -1,16 +1,9 @@
-// Hay que agregar condicionales a los estados de los campos de registro
 
 import { useState } from "react";
 import "./Register.css";
-
 import { Navigate, Link } from "react-router-dom";
 import axios from "axios";
 import Swal from "sweetalert2";
-
-
-
-
-
 
 
 function Register() {
