@@ -23,7 +23,7 @@ function parseJwt(token) {
   return JSON.parse(jsonPayload);
 }
 
-function Login() {
+function Login({ setUser }) {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loginssu, setLoginssu] = useState(false);
@@ -39,16 +39,24 @@ function Login() {
       .then((response) => {
         console.log("Respuesta del servidor:", response.data.token);
         if (response.data.token) {
-          console.log(parseJwt(response.data.token));
+          const decoded = parseJwt(response.data.token);
+
           localStorage.setItem("token", response.data.token);
+
+          // ACTUALIZA EL ESTADO GLOBAL
+          setUser({
+            name: decoded.name_user,
+          });
+
           Swal.fire({
-            title: "Guardado",
+            title: "Bienvenido",
             html: "¡Inicio de sesión exitoso!",
             icon: "success",
-            timer: 3000,
+            timer: 2000,
+            showConfirmButton: false,
           });
-          setLoginssu(true);
-         navigate('/dashboard', { replace: true });
+
+          navigate("/dashboard", { replace: true });
         } else {
           setLoginssu(false);
         }

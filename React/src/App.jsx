@@ -1,12 +1,11 @@
-import { Routes, Route, Navigate } from 'react-router-dom';
-import { useState } from 'react';
-import Navbar from './components/Navbar/Navbar';
-import Home from './components/Home/Home';
-import Register from './components/Auth/Register';
-import Login from './components/Auth/Login';
-import ClientDashboard from './components/Dashboard/ClientDashboard';
-import LoanRequestForm from './components/LoanRequest/LoanRequestForm';
-
+import { Routes, Route, Navigate } from "react-router-dom";
+import { useState } from "react";
+import Navbar from "./components/Navbar/Navbar";
+import Home from "./components/Home/Home";
+import Register from "./components/Auth/Register";
+import Login from "./components/Auth/Login";
+import ClientDashboard from "./components/Dashboard/ClientDashboard";
+import LoanRequestForm from "./components/LoanRequest/LoanRequestForm";
 
 function parseJwt(token) {
   if (!token) return null; // Evita el error si es null
@@ -24,41 +23,48 @@ function parseJwt(token) {
   return JSON.parse(jsonPayload);
 }
 
-
-
-
-
 function App() {
-   const rawToken = localStorage.getItem("token");
+  const rawToken = localStorage.getItem("token");
   const payload = parseJwt(rawToken);
   const now = new Date().getTime();
 
   const tokenValido = payload ? payload.exp * 1000 > now : false;
 
   const [user, setUser] = useState(
-    payload && tokenValido ? { name: payload.first_name } : null,
+    payload && tokenValido ? { name: payload.name_user } : null,
   );
   // const [user, setUser] = useState(null);
 
   return (
     <div className="App">
-      {/* user ? <Navigate to="/dashboard" /> : */}
-
-      <Navbar user={user} />
+      <Navbar user={user} setUser={setUser} />
       <Routes>
-        <Route path='/' element={<Home />} />
-        <Route path='/login' element={user ? <Navigate to="/dashboard" /> : <Login setUser={setUser} />} />
-        <Route path='/register' element={user ? <Navigate to="/dashboard" /> : <Register setUser={setUser} />} />
-       
-        <Route path="/new-request" element={
-          user ? <LoanRequestForm user={user} /> : <Navigate to="/login" />
-        } />
+        <Route path="/" element={<Home />} />
+        <Route
+          path="/login"
+          element={
+            user ? <Navigate to="/dashboard" /> : <Login setUser={setUser} />
+          }
+        />
+        <Route
+          path="/register"
+          element={
+            user ? <Navigate to="/dashboard" /> : <Register setUser={setUser} />
+          }
+        />
 
-        <Route path='/dashboard' element={
-          user ? (<ClientDashboard user={user} />) : (
-            <Navigate to="/login" />
-          )
-        }
+        <Route
+          path="/new-request"
+          element={
+            user ? <LoanRequestForm user={user} /> : <Navigate to="/login" />
+          }
+        />
+
+        <Route
+          path="/dashboard"
+          element={
+            user ? <ClientDashboard user={user} /> : <Navigate to="/login" />
+          }
         />
       </Routes>
     </div>

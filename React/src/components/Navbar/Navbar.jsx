@@ -1,11 +1,16 @@
 import "./Navbar.css";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { useState } from "react";
 
-
-
-function Navbar({ user }) {
+function Navbar({ user, setUser }) {
   const [menuOpen, setMenuOpen] = useState(false);
+  const navigate = useNavigate();
+
+  const handleLogout = () => {
+    localStorage.removeItem("token");
+    setUser(null);
+    navigate("/login");
+  };
 
   return (
     <header className="navbar">
@@ -36,8 +41,7 @@ function Navbar({ user }) {
               />
 
               <span className="profile-name">
-                Hola,{" "}
-                <strong>{user?.name || user?.username || "Usuario"}</strong>
+                Hola, <strong>{user?.name || user.name || "Usuario"}</strong>
               </span>
             </div>
 
@@ -49,7 +53,7 @@ function Navbar({ user }) {
 
                 <button
                   className="logout-btn"
-                  onClick={() => window.location.reload()}
+                  onClick={handleLogout}
                 >
                   Salir
                 </button>
