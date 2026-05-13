@@ -15,7 +15,7 @@ function ClientDashboard({ user }) {
   return (
     <div className="dashboard-container">
       <header className="dashboard-header">
-        <h1>Panel de Control</h1>
+        <h1>Panel de Controls</h1>
         <p>Bienvenido de nuevo, <strong>{user.name}</strong></p>
       </header>
 

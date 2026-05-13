@@ -25,6 +25,7 @@ function parseJwt(token) {
 
 function Login({ setUser }) {
   const [email, setEmail] = useState("");
+  const [role, setRole] = useState("");
   const [password, setPassword] = useState("");
   const [loginssu, setLoginssu] = useState(false);
   const navigate = useNavigate();
@@ -34,6 +35,7 @@ function Login({ setUser }) {
     axios
       .post("http://localhost:3001/users/login", {
         email: email,
+        role: role,
         password: password,
       })
       .then((response) => {
@@ -42,10 +44,10 @@ function Login({ setUser }) {
           const decoded = parseJwt(response.data.token);
 
           localStorage.setItem("token", response.data.token);
-
           // ACTUALIZA EL ESTADO GLOBAL
           setUser({
             name: decoded.name_user,
+            role: decoded.code_user
           });
 
           Swal.fire({

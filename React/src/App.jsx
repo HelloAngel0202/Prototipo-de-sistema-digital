@@ -5,6 +5,7 @@ import Home from "./components/Home/Home";
 import Register from "./components/Auth/Register";
 import Login from "./components/Auth/Login";
 import ClientDashboard from "./components/Dashboard/ClientDashboard";
+import BankDashboard from "./components/Dashboard/BankDashboard";
 import LoanRequestForm from "./components/LoanRequest/LoanRequestForm";
 
 function parseJwt(token) {
@@ -63,10 +64,11 @@ function App() {
         <Route
           path="/dashboard"
           element={
-            user ? <ClientDashboard user={user} /> : <Navigate to="/login" />
+            user ? (user.role.startsWith("PR") ? (<BankDashboard user={user} />) : (<ClientDashboard user={user}/>)) : <Navigate to="/login" />
           }
         />
       </Routes>
+      
     </div>
   );
 }
