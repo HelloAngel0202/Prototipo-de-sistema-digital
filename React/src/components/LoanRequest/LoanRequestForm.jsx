@@ -1,24 +1,68 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import axios from 'axios';
 import './LoanRequestForm.css';
+import Swal from "sweetalert2";
 
-function LoanRequestForm({ user }) {
+function parseJwt(token) {
+  if (!token) return null;
+  const base64Url = token.split(".")[1];
+  const base64 = base64Url.replace(/-/g, "+").replace(/_/g, "/");
+  const jsonPayload = decodeURIComponent(
+    window.atob(base64).split("")
+      .map((c) => "%" + ("00" + c.charCodeAt(0).toString(16)).slice(-2))
+      .join("")
+  );
+  return JSON.parse(jsonPayload);
+}
+
+const rawToken = localStorage.getItem("token");
+const payload = parseJwt(rawToken);
+const now = new Date().getTime();
+const tokenValido = payload ? payload.exp * 1000 > now : false;
+
+function LoanRequestForm() {
   const navigate = useNavigate();
   const [amount, setAmount] = useState('');
   const [reason, setReason] = useState('');
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
+
+    if (!tokenValido) {
+      alert("Tu sesión ha expirado. Inicia sesión nuevamente.");
+      navigate('/login');
+      return;
+    }
+
     const requestData = {
-      userId: user.id,
-      monto: amount,
-      motivo: reason,
-      status: 'pendiente',
-      fecha: new Date().toLocaleDateString()
+      code_user: payload.code_user,   // viene del JWT
+      amount: amount,
+      description: reason,
+      state: 'pendiente'
     };
-    console.log("Solicitud anónima lanzada a los bancos:", requestData);
-    alert("¡Solicitud publicada! Ahora espera a que los bancos te envíen sus propuestas.");
-    navigate('/dashboard', {replace: true});
+
+    try {
+      const res = await axios.post("http://localhost:3001/users/publications", requestData, {
+        headers: { Authorization: `Bearer ${rawToken}` }
+      });
+      console.log("Respuesta del backend:", res.data);
+      Swal.fire({
+                  title: "Solicitud publicada exitosamente!",
+                  html: "¡ Ahora espera a que los bancos te envíen sus propuestas.",
+                  icon: "success",
+                  timer: 3000,
+                });
+      //alert("¡Solicitud publicada! Ahora espera a que los bancos te envíen sus propuestas.");
+      navigate('/dashboard', { replace: true });
+    } catch (error) {
+      console.error("Error al publicar solicitud:", error);
+      Swal.fire({
+        icon: "error",
+        title: "Oops...",
+        text: "Hubo un error al publicar tu solicitud.",
+      });
+    }
   };
 
   return (

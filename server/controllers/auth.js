@@ -43,6 +43,7 @@ const login = async (req, res) => {
             email: user.email,
             first_name: user.first_name,
             last_name: user.last_name,
+            code_user: user.code_user,
           },
           process.env.JWT_SECRET || "Stack",
           { expiresIn: "1m" },
@@ -67,36 +68,81 @@ const login = async (req, res) => {
 const Register = async (req, res) => {
   try {
     const { name, email, role, password } = req.body;
-    console.log("datos: " + name + " " + email + " " + role + " " + password);
 
     if (!name || !email || !role || !password) {
-      return res.status(400).json({ message: "Todos los campos son requeridos" });
+      return res.status(400).json({
+        message: "Todos los campos son requeridos",
+      });
     }
 
-    // Encriptar contraseña
-    const hashedPassword = await bcrypt.hash(password, 10);
+    // Prefijo según rol
+    let prefix = "";
 
-    // Insertar usuario
+    if (role === "prestamista") {
+      prefix = "PR";
+    } else if (role === "cliente") {
+      prefix = "CL";
+    } else {
+      prefix = "US";
+    }
+
+    // Obtener cantidad de usuarios con ese rol
     bd.query(
-      "INSERT INTO user (name_user, email, user_type, password) VALUES (?, ?, ?, ?)",
-      [name, email, role, hashedPassword],
-      (err, result) => {
+      "SELECT COUNT(*) AS total FROM user WHERE user_type = ?",
+      [role],
+      async (err, rows) => {
         if (err) {
-          console.error("Error al registrar usuario:", err);
-          return res.status(500).json({ message: "Error al registrar usuario" });
+          console.error(err);
+          return res.status(500).json({
+            message: "Error al generar código",
+          });
         }
 
-        // Generar token inmediatamente después de registrar
-        const token = jwt.sign(
-          { id: result.insertId, email, role },
-          "Stack", // clave secreta (usa .env)
-          { expiresIn: "1h" }
+        const nextNumber = rows[0].total + 1;
+
+        // Letra aleatoria
+        const randomLetter = String.fromCharCode(
+          65 + Math.floor(Math.random() * 26)
         );
 
-        res.status(201).json({
-          message: "Usuario registrado exitosamente",
-          token,
-        });
+        // Código final
+        const code = `${prefix}${nextNumber}${randomLetter}`;
+
+        // Encriptar contraseña
+        const hashedPassword = await bcrypt.hash(password, 10);
+
+        // Insertar usuario
+        bd.query(
+          `INSERT INTO user 
+          (code_user, name_user, email, user_type, password) 
+          VALUES (?, ?, ?, ?, ?)`,
+          [code, name, email, role, hashedPassword],
+          (err, result) => {
+            if (err) {
+              console.error("Error al registrar usuario:", err);
+              return res.status(500).json({
+                message: "Error al registrar usuario",
+              });
+            }
+
+            // Token
+            const token = jwt.sign(
+              {
+                id: result.insertId,
+                email,
+                role,
+              },
+              "Stack",
+              { expiresIn: "1h" }
+            );
+
+            res.status(201).json({
+              message: "Usuario registrado exitosamente",
+              code,
+              token,
+            });
+          }
+        );
       }
     );
   } catch (error) {

@@ -48,7 +48,7 @@ function Login() {
             timer: 3000,
           });
           setLoginssu(true);
-          navigate("/dashboard");
+         navigate('/dashboard', { replace: true });
         } else {
           setLoginssu(false);
         }
@@ -69,7 +69,7 @@ function Login() {
   return (
     <>
       {loginssu ? (
-        <Navigate to="/dashboard" />
+        <Navigate to="/dashboard" replace={true} />
       ) : (
         <div className="auth-container">
           <form className="auth-card" onSubmit={handleLogin}>
