@@ -36,9 +36,9 @@ function LoanRequestForm() {
     }
 
     const requestData = {
-      code_user: payload.code_user,   // viene del JWT
+      user_id: payload.id,   // viene del JWT
       amount: amount,
-      description: reason,
+      reason: reason,
       state: 'pendiente'
     };
 

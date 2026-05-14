@@ -100,39 +100,49 @@ const Register = async (req, res) => {
 
     // 2️⃣ Crear usuario en tabla users
     function crearUsuario(infoId) {
-      bd.query(
-        `INSERT INTO users 
-        (information_id, username, email, role, password ) 
-        VALUES (?, ?, ?, ?, ?)`,
-        [infoId, name, email, role, hashedPassword],
-        (err, resultUser) => {
-          if (err) {
-            console.error("Error al registrar usuario:", err);
-            return res
-              .status(500)
-              .json({ message: "Error al registrar usuario" });
-          }
+  bd.query(
+    `INSERT INTO users 
+    (information_id, username, email, role, password ) 
+    VALUES (?, ?, ?, ?, ?)`,
+    [infoId, name, email, role, hashedPassword],
+    (err, resultUser) => {
+      if (err) {
+        console.error("Error al registrar usuario:", err);
+        return res
+          .status(500)
+          .json({ message: "Error al registrar usuario" });
+      }
 
-          const token = jwt.sign(
-             {
-            id: resultUser.insertId,
-                email,
+      // Construir el objeto user manualmente
+      const user = {
+        id: resultUser.insertId,
+        email,
+        username: name,
+        role,
+        photo: "https://img.a.transfermarkt.technology/portrait/big/8198-1748102259.jpg?lm=1",
+      };
 
-                role,
-                name_user: name,
-            
-          },
-            process.env.JWT_SECRET || "Stack",
-            { expiresIn: "1h" },
-          );
-
-          res.status(201).json({
-            message: "Usuario registrado exitosamente",
-            token,
-          });
+      const token = jwt.sign(
+        {
+          id: user.id,
+          email: user.email,
+          name_user: user.username,
+          role: user.role,
+          photo: user.photo,
         },
+        process.env.JWT_SECRET || "Stack",
+        { expiresIn: "1h" },
       );
-    }
+
+      res.status(201).json({
+        message: "Usuario registrado exitosamente",
+        user,
+        token,
+      });
+    },
+  );
+}
+
   } catch (error) {
     console.error("Error en registro:", error);
     res.status(500).send("Error interno del servidor");

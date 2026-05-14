@@ -2,10 +2,10 @@ const db = require("../bd");
 
 const publications = async (req, res) => {
   try {
-    const { code_user, amount, description } = req.body;
+    const { user_id, amount, reason } = req.body;
 
     // Validar campos obligatorios
-    if (!code_user || !amount || !description) {
+    if (!user_id || !amount || !reason) {
       return res
         .status(400)
         .json({ message: "Todos los campos son requeridos" });
@@ -13,8 +13,8 @@ const publications = async (req, res) => {
 
     // Insertar publicación
     db.query(
-      "INSERT INTO publications (code_user,amount,description, state) VALUES (?, ?, ?, ?)",
-      [code_user, amount, description, "pendiente"],
+      "INSERT INTO client_request (user_id ,amount,reason,created_at, state) VALUES (?, ?, ?, ?, ?)",
+      [user_id, amount, reason, new Date(), "pendiente"],
       (err, result) => {
         if (err) {
           console.error("Error al crear publicación:", err);
@@ -34,6 +34,9 @@ const publications = async (req, res) => {
     res.status(500).send("Error interno del servidor");
   }
 };
+
+
+
 
 module.exports = {
   publications,
