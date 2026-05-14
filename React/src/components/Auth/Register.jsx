@@ -1,7 +1,7 @@
 
 import { useState } from "react";
 import "./Register.css";
-import { Navigate, Link, useNavigate } from "react-router-dom";
+import {  Link, useNavigate } from "react-router-dom";
 import axios from "axios";
 import Swal from "sweetalert2";
 
@@ -29,6 +29,7 @@ function Register() {
 
         if (response.data.token) {
           localStorage.setItem("token", response.data.token);
+          
 
 
         }

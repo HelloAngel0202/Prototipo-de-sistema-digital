@@ -1,6 +1,8 @@
 import { Routes, Route, Navigate } from "react-router-dom";
 import { useState } from "react";
 import Navbar from "./components/Navbar/Navbar";
+import Profile from "./components/Navbar/Profile";
+import Settings from "./components/Navbar/Settings";
 import Home from "./components/Home/Home";
 import Register from "./components/Auth/Register";
 import Login from "./components/Auth/Login";
@@ -62,9 +64,23 @@ function App() {
         />
 
         <Route
+          path="/profile"
+          element={
+            user ? <Profile user={user} /> : <Navigate to="/login" />
+          }
+        />
+        <Route
+          path="/settings"
+          element={
+            user ? <Settings user={user} /> : <Navigate to="/login" />
+          }
+        />
+        
+        
+        <Route
           path="/dashboard"
           element={
-            user ? (user.role.startsWith("PR") ? (<BankDashboard user={user} />) : (<ClientDashboard user={user}/>)) : <Navigate to="/login" />
+            user ? (user.role === "prestamista" ? (<BankDashboard user={user} />) : (<ClientDashboard user={user}/>)) : <Navigate to="/login" />
           }
         />
       </Routes>
