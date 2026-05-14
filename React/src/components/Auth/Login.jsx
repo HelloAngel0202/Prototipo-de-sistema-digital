@@ -45,6 +45,7 @@ function Login({ setUser }) {
           localStorage.setItem("token", response.data.token);
           // ACTUALIZA EL ESTADO GLOBAL
           setUser({
+            id: decoded.id,
             name: decoded.name_user,
             role: decoded.role,
             photo: decoded.photo,

@@ -3,13 +3,18 @@ const db = require("../bd");
 // Obtener todas las publicaciones de la tabla client_request
 const publications = async (req, res) => {
   try {
-    db.query("SELECT * FROM client_request", (err, results) => {
+    const { user_id } = req.query;
+    const query = user_id
+      ? "SELECT * FROM client_request WHERE user_id = ?"
+      : "SELECT * FROM client_request";
+    const params = user_id ? [user_id] : [];
+
+    db.query(query, params, (err, results) => {
       if (err) {
         console.error("Error al consultar client_request:", err);
         return res.status(500).json({ message: "Error al obtener publicaciones" });
       }
 
-      // Devuelve todas las solicitudes
       res.status(200).json(results);
     });
   } catch (error) {

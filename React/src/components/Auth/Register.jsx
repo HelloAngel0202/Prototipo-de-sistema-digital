@@ -5,9 +5,24 @@ import {  Link, useNavigate } from "react-router-dom";
 import axios from "axios";
 import Swal from "sweetalert2";
 
+function parseJwt(token) {
+  if (!token) return null;
+  const base64Url = token.split(".")[1];
+  const base64 = base64Url.replace(/-/g, "+").replace(/_/g, "/");
+  const jsonPayload = decodeURIComponent(
+    window
+      .atob(base64)
+      .split("")
+      .map(function (c) {
+        return "%" + ("00" + c.charCodeAt(0).toString(16)).slice(-2);
+      })
+      .join(""),
+  );
 
+  return JSON.parse(jsonPayload);
+}
 
-function Register() {
+function Register({ setUser }) {
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [role, setRole] = useState('cliente');
@@ -29,9 +44,15 @@ function Register() {
 
         if (response.data.token) {
           localStorage.setItem("token", response.data.token);
-          
-
-
+          const decoded = parseJwt(response.data.token);
+          if (decoded) {
+            setUser({
+              id: decoded.id,
+              name: decoded.name_user,
+              role: decoded.role,
+              photo: decoded.photo,
+            });
+          }
         }
 
         Swal.fire({

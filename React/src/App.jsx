@@ -34,7 +34,14 @@ function App() {
   const tokenValido = payload ? payload.exp * 1000 > now : false;
 
   const [user, setUser] = useState(
-    payload && tokenValido ? { name: payload.name_user } : null,
+    payload && tokenValido
+      ? {
+          id: payload.id,
+          name: payload.name_user,
+          role: payload.role,
+          photo: payload.photo,
+        }
+      : null,
   );
   // const [user, setUser] = useState(null);
 

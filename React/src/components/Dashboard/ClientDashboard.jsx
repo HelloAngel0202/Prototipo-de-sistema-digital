@@ -1,8 +1,34 @@
 import './ClientDashboard.css';
 import { Link } from 'react-router-dom';
 import OfferList from '../Offers/OfferList';
+import axios from 'axios';
+import { useEffect, useState } from 'react';
 
 function ClientDashboard({ user }) {
+  const [publications, setPublications] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const obtenerPublicaciones = async () => {
+      if (!user?.id) {
+        setLoading(false);
+        return;
+      }
+
+      try {
+        const response = await axios.get(
+          `http://localhost:3001/users/my-publications?user_id=${user.id}`,
+        );
+        setPublications(response.data);
+      } catch (error) {
+        console.error('Error obteniendo tus solicitudes:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    obtenerPublicaciones();
+  }, [user]);
 
   // Datos simulados hasta que se conecte con el backend de angel 
   const stats = {
@@ -68,6 +94,30 @@ function ClientDashboard({ user }) {
             <p>Cuotas restantes: <strong>4 de 12</strong></p>
           </div>
         </div>
+      </section>
+
+      <section className="user-publications">
+        <h3>Tus solicitudes publicadas</h3>
+        {loading ? (
+          <p>Cargando tus solicitudes...</p>
+        ) : publications.length === 0 ? (
+          <p>No has publicado ninguna solicitud aún.</p>
+        ) : (
+          publications.map((solicitud) => (
+            <div key={solicitud.id} className="publication-card">
+              <div className="publication-header">
+                <span className="amount-tag">
+                  RD$ {Number(solicitud.amount).toLocaleString()}
+                </span>
+                <span className={`status-badge ${solicitud.state}`}>{solicitud.state}</span>
+              </div>
+              <p>{solicitud.reason}</p>
+              <p className="publication-meta">
+                Publicada el {new Date(solicitud.created_at).toLocaleDateString('es-DO')}
+              </p>
+            </div>
+          ))
+        )}
       </section>
 
       <OfferList />

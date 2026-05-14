@@ -12,5 +12,6 @@ router.post("/login", auth.login);
 router.post("/register", auth.Register);
 router.post("/publications", Lender.publications);
 router.get("/brpublic", borrower.publications);
+router.get("/my-publications", borrower.publications);
 
 module.exports = router;
