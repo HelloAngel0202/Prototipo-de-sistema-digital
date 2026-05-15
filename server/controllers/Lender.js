@@ -15,7 +15,7 @@ const publications = async (req, res) => {
     // Insertar publicación
     db.query(
       "INSERT INTO client_request (user_id ,amount,reason,created_at, state) VALUES (?, ?, ?, ?, ?)",
-      [user_id, amount, reason, new Date(), "pendiente"],
+      [user_id, amount, reason, new Date(), "pending"],
       (err, result) => {
         if (err) {
           console.error("Error al crear publicación:", err);

@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import OfferList from '../Offers/OfferList';
 import axios from 'axios';
 import { useEffect, useState } from 'react';
+import Swal from "sweetalert2";
 
 function ClientDashboard({ user }) {
   const [publications, setPublications] = useState([]);
@@ -14,8 +15,15 @@ function ClientDashboard({ user }) {
     try {
       axios.get(`http://localhost:3001/users/accept-offer?offerId=${offer.client_request_id}`)
         .then(response => {
-          alert('Has aceptado la oferta exitosamente');
           setNotifications(prev => prev.filter(notificacion => notificacion.id !== offer.id));
+
+          Swal.fire({
+            title: "Aceptado",
+            html: "¡Oferta aceptada exitosamente!",
+            icon: "success",
+            timer: 2000,
+            showConfirmButton: false,
+          });
         })
         .catch(error => {
           console.error('Error al aceptar la oferta:', error);

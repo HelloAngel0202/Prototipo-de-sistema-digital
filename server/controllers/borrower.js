@@ -26,7 +26,7 @@ const publications = async (req, res) => {
 const notifications = async (req, res) => {
   try {
     const { client_id } = req.query;
-    const query = "SELECT * FROM notifications WHERE client_id = ?";
+    const query = "SELECT * FROM notifications WHERE client_id = ? AND state = 'pending'";
     const params = [client_id];
 
     db.query(query, params, (err, results) => {
