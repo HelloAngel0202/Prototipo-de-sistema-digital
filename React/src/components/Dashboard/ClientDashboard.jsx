@@ -7,15 +7,32 @@ import { useEffect, useState } from 'react';
 function ClientDashboard({ user }) {
   const [publications, setPublications] = useState([]);
   const [notifications, setNotifications] = useState([]);
-  const [lenderInfos, setLenderInfos] = useState({}); // Cambiado a objeto para múltiples lenders
+  const [lenderInfos, setLenderInfos] = useState({}); 
   const [loading, setLoading] = useState(true);
+  
+  const acceptOffer = (offerId) => {
+    
+    try {
+      axios.get(`http://localhost:3001/users/accept-offer?offerId=${offerId.client_request_id}`)
+        .then(response => {
+          alert('Has aceptado la oferta exitosamente');
+          setNotifications(prev => prev.filter(notificacion => notificacion.id !== offerId));
+        })
+        .catch(error => {
+          console.error('Error al aceptar la oferta:', error);
+          alert('Hubo un error al aceptar la oferta. Por favor, intenta nuevamente.1');
+        });
+    } catch (error) {
+      console.error('Error al aceptar la oferta:', error);
+      alert('Hubo un error al aceptar la oferta. Por favor, intenta nuevamente.2');
+    }
+  }
 
   const getLenderInfo = async (lender_id) => {
     try {
       const response = await axios.get(
         `http://localhost:3001/users/lender-info?lender_id=${lender_id}`
       );
-      console.log("Información del prestamista obtenida:", response.data);
       setLenderInfos(prev => ({ ...prev, [lender_id]: response.data })); // Almacena por id
     } catch (error) {
       console.error("Error obteniendo información del prestamista:", error);
@@ -59,15 +76,6 @@ function ClientDashboard({ user }) {
     obtenerPublicaciones();
     
   }, [user]);
-
-  // Nuevo useEffect para cargar lenderInfos cuando notifications cambie
-  useEffect(() => {
-    notifications.forEach(notif => {
-      if (notif.lender_id && !lenderInfos[notif.lender_id]) {
-        getLenderInfo(notif.lender_id);
-      }
-    });
-  }, [notifications]); // Depende solo de notifications
 
   // Datos simulados hasta que se conecte con el backend de angel 
   const stats = {
@@ -172,7 +180,7 @@ function ClientDashboard({ user }) {
 
               <div className="offer-footer">
                 <span className="type-tag">{notificacion.tipo}</span>
-                <button className="btn-accept" onClick={() => alert(`Has seleccionado a ${notificacion.lender_id}`)}>
+                <button className="btn-accept" onClick={() => acceptOffer(notificacion)}>
                   Permitir acceso a mi información
                 </button>
               </div>

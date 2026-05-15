@@ -17,6 +17,7 @@ router.get("/my-publications", borrower.publications);
 router.post("/getRequestInfo", Lender.getRequestInfo);
 router.get("/notifications", borrower.notifications);
 router.get("/lender-info", Lender.getLenderInfo);
+router.get("/accept-offer", borrower.acceptOffer);
 
 
 module.exports = router;

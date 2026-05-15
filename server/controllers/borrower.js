@@ -43,7 +43,33 @@ const notifications = async (req, res) => {
   }
 };
 
+const acceptOffer = async (req, res) => {
+  try {
+    const { offerId } = req.query;
+    console.log(offerId);
+
+    // Lógica para aceptar la oferta
+    const query = "UPDATE client_request SET state = 'accepted' WHERE id = ?";
+    db.query(query, [offerId], (err, results) => {
+      if (err) {
+        console.error("Error al aceptar la oferta:", err);
+        return res.status(500).json({ message: "Error al aceptar la oferta" });
+      }
+
+      if (results.affectedRows === 0) {
+        return res.status(404).json({ message: "Oferta no encontrada" });
+      }
+
+      res.status(200).json({ message: "Oferta aceptada exitosamente" });
+    });
+  } catch (error) {
+    console.error("Error interno:", error);
+    res.status(500).send("Error interno del servidor");
+  }
+};
+
 module.exports = {
   publications,
   notifications,
+  acceptOffer
 };
