@@ -14,6 +14,9 @@ router.put("/register", auth.updateUser);
 router.post("/publications", Lender.publications);
 router.get("/brpublic", borrower.publications);
 router.get("/my-publications", borrower.publications);
+router.post("/getRequestInfo", Lender.getRequestInfo);
+router.get("/notifications", borrower.notifications);
+router.get("/lender-info", Lender.getLenderInfo);
 
 
 module.exports = router;

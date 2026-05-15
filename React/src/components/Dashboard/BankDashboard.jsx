@@ -5,8 +5,23 @@ import { useState, useEffect } from "react";
 function BankDashboard({ user }) {
   const [publications, setPublications] = useState([]);
 
+  const getInformationRequest = async (solicitud_id, lender_id) => {
+    try {
+      const response = await axios.post(
+        `http://localhost:3001/users/getRequestInfo?request_id=${solicitud_id}&lender_id=${lender_id}`,
+        {
+          request_id: solicitud_id,
+          lender_id: lender_id
+        }
+      );
+    } catch (error) {
+      console.error("Error obteniendo información de la solicitud:", error);
+    }
+  };
+
   useEffect(() => {
     const obtenerSolicitudes = async () => {
+
       try {
         const response = await axios.get(
           "http://localhost:3001/users/brpublic"
@@ -19,6 +34,8 @@ function BankDashboard({ user }) {
         console.error("Error obteniendo publicaciones:", error);
       }
     };
+
+
 
     obtenerSolicitudes();
   }, []);
@@ -44,10 +61,13 @@ function BankDashboard({ user }) {
                 RD$ {Number(solicitud.amount).toLocaleString()}
               </span>
               <p>{solicitud.reason}</p>
+              <p>
+                <button onClick={() => { getInformationRequest(solicitud.user_id, user.id) }}>Solicitar información</button>
+              </p>
             </div>
             <p className="publication-meta">
-                Publicada el {new Date(solicitud.created_at).toLocaleDateString('es-DO')}
-              </p>
+              Publicada el {new Date(solicitud.created_at).toLocaleDateString('es-DO')}
+            </p>
           </div>
         ))}
       </section>

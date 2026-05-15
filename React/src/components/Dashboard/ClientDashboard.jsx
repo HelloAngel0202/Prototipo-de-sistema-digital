@@ -6,7 +6,21 @@ import { useEffect, useState } from 'react';
 
 function ClientDashboard({ user }) {
   const [publications, setPublications] = useState([]);
+  const [notifications, setNotifications] = useState([]);
+  const [lenderInfos, setLenderInfos] = useState({}); // Cambiado a objeto para múltiples lenders
   const [loading, setLoading] = useState(true);
+
+  const getLenderInfo = async (lender_id) => {
+    try {
+      const response = await axios.get(
+        `http://localhost:3001/users/lender-info?lender_id=${lender_id}`
+      );
+      console.log("Información del prestamista obtenida:", response.data);
+      setLenderInfos(prev => ({ ...prev, [lender_id]: response.data })); // Almacena por id
+    } catch (error) {
+      console.error("Error obteniendo información del prestamista:", error);
+    }
+  };
 
   useEffect(() => {
     const obtenerPublicaciones = async () => {
@@ -26,9 +40,34 @@ function ClientDashboard({ user }) {
         setLoading(false);
       }
     };
+    const notifications = async (client_id) => {
+      try {
+        const response = await axios.get(
+          `http://localhost:3001/users/notifications?client_id=${user.id}`
+        ).then((response) => {
+          setNotifications(response.data);
+        });
 
+        // Handle notifications data
+      } catch (error) {
+        console.error('Error obteniendo notificaciones:', error);
+      }
+
+    };
+
+    notifications();
     obtenerPublicaciones();
+    
   }, [user]);
+
+  // Nuevo useEffect para cargar lenderInfos cuando notifications cambie
+  useEffect(() => {
+    notifications.forEach(notif => {
+      if (notif.lender_id && !lenderInfos[notif.lender_id]) {
+        getLenderInfo(notif.lender_id);
+      }
+    });
+  }, [notifications]); // Depende solo de notifications
 
   // Datos simulados hasta que se conecte con el backend de angel 
   const stats = {
@@ -119,8 +158,28 @@ function ClientDashboard({ user }) {
           ))
         )}
       </section>
+      <div className="offers-container">
+        <h3>Ofertas Recibidas</h3>
+        <p className="offers-subtitle">Compara las condiciones y elige la que prefieras</p>
 
-      <OfferList />
+        <div className="offers-grid">
+          {notifications.map(notificacion => (
+            <div key={notificacion.id} className="offer-card">
+              <div className="offer-header">
+                <span className="bank-badge">{lenderInfos[notificacion.lender_id]?.name || 'Nombre no disponible'}</span>
+                <span className="rating">5⭐ {notificacion.puntos}</span>
+              </div>
+
+              <div className="offer-footer">
+                <span className="type-tag">{notificacion.tipo}</span>
+                <button className="btn-accept" onClick={() => alert(`Has seleccionado a ${notificacion.lender_id}`)}>
+                  Permitir acceso a mi información
+                </button>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
     </div>
   );
 }

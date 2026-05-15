@@ -23,6 +23,27 @@ const publications = async (req, res) => {
   }
 };
 
+const notifications = async (req, res) => {
+  try {
+    const { client_id } = req.query;
+    const query = "SELECT * FROM notifications WHERE client_id = ?";
+    const params = [client_id];
+
+    db.query(query, params, (err, results) => {
+      if (err) {
+        console.error("Error al consultar notifications:", err);
+        return res.status(500).json({ message: "Error al obtener notificaciones" });
+      }
+
+      res.status(200).json(results);
+    });
+  } catch (error) {
+    console.error("Error interno:", error);
+    res.status(500).send("Error interno del servidor");
+  }
+};
+
 module.exports = {
   publications,
+  notifications,
 };
