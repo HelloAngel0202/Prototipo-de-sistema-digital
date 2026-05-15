@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 
 function BankDashboard({ user }) {
   const [publications, setPublications] = useState([]);
+  const [notifications, setNotifications] = useState([]);
 
   const getInformationRequest = async (solicitud_id, lender_id) => {
     try {
@@ -27,17 +28,29 @@ function BankDashboard({ user }) {
           "http://localhost:3001/users/brpublic"
         );
 
-        console.log(response.data);
 
         setPublications(response.data);
       } catch (error) {
         console.error("Error obteniendo publicaciones:", error);
       }
     };
+    const obtenerNotificaciones = async () => {
 
 
+      try {
+        console.log(user.id);
+        const response = await axios.get(
+          `http://localhost:3001/users/sended-notifications?lender_id=${user.id}`
+        );
+        console.log(response.data);
+        setNotifications(response.data);
+      } catch (error) {
+        console.error("Error obteniendo notificaciones:", error);
+      }
+    };
 
     obtenerSolicitudes();
+    obtenerNotificaciones();
   }, []);
 
   return (
@@ -70,6 +83,31 @@ function BankDashboard({ user }) {
             </p>
           </div>
         ))}
+      </section>
+
+      <section className="accepted-request-notice">
+        <div className="accepted-request-card">
+          <h2>Solicitudes enviadas</h2>
+          {notifications.map((notification) => (
+            <div key={notification.id} className="request-feed-card">
+              <div className="card-top">
+                <span className="amount-tag">
+                  <h2>{notification.client_name}</h2>
+                </span>
+                <p>
+                  <button onClick={() => { getInformationRequest(notification.client_id, user.id) }}>Solicitar información</button>
+                </p>
+              </div>
+              <p className="publication-meta">
+                Publicada el {new Date(notification.created_at).toLocaleDateString('es-DO')}
+              </p>
+            </div>
+          ))}
+          <p>
+            Solicitud de información aceptada, el cliente ha permitido el acceso a su información financiera.
+            Puedes revisar los detalles en la sección de solicitudes aceptadas.
+          </p>
+        </div>
       </section>
     </div>
   );

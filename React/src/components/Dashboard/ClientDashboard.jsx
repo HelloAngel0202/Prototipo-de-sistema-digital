@@ -27,7 +27,13 @@ function ClientDashboard({ user }) {
         })
         .catch(error => {
           console.error('Error al aceptar la oferta:', error);
-          alert('Hubo un error al aceptar la oferta. Por favor, intenta nuevamente.1');
+          Swal.fire({
+            title: "Error",
+            html: "Hubo un error al aceptar la oferta. Por favor, intenta nuevamente.",
+            icon: "error",
+            timer: 2000,
+            showConfirmButton: false,
+          });
         });
     } catch (error) {
       console.error('Error al aceptar la oferta:', error);

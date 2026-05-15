@@ -22,6 +22,29 @@ const publications = async (req, res) => {
     res.status(500).send("Error interno del servidor");
   }
 };
+const sendedNotifications = async (req, res) => {
+  try {
+    const { lender_id } = req.query;
+    const query = `
+      SELECT n.*, c.first_name AS client_name
+      FROM notifications n
+      LEFT JOIN users u ON n.client_id = u.id
+      LEFT JOIN client c ON u.information_id = c.id
+      WHERE n.lender_id = ?
+    `;
+    const params = [lender_id];
+    db.query(query, params, (err, results) => {
+      if (err) {
+        console.error("Error al consultar notifications:", err);
+        return res.status(500).json({ message: "Error al obtener notificaciones" });
+      }
+      return res.status(200).json(results);
+    });
+  } catch (error) {
+    console.error("Error interno:", error);
+    res.status(500).send("Error interno del servidor");
+  }
+};
 
 const notifications = async (req, res) => {
   try {
@@ -70,5 +93,6 @@ const acceptOffer = async (req, res) => {
 module.exports = {
   publications,
   notifications,
-  acceptOffer
+  acceptOffer,
+  sendedNotifications
 };
