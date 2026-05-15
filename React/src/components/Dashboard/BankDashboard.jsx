@@ -9,7 +9,7 @@ function BankDashboard({ user }) {
     const obtenerSolicitudes = async () => {
       try {
         const response = await axios.get(
-          "http://localhost:3001/user/brpublic"
+          "http://localhost:3001/users/brpublic"
         );
 
         console.log(response.data);
@@ -43,9 +43,11 @@ function BankDashboard({ user }) {
               <span className="amount-tag">
                 RD$ {Number(solicitud.amount).toLocaleString()}
               </span>
+              <p>{solicitud.reason}</p>
             </div>
-
-            <p>{solicitud.reason}</p>
+            <p className="publication-meta">
+                Publicada el {new Date(solicitud.created_at).toLocaleDateString('es-DO')}
+              </p>
           </div>
         ))}
       </section>

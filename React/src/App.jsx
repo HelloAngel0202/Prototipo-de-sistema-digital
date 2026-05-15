@@ -27,11 +27,13 @@ function parseJwt(token) {
 }
 
 function App() {
+
   const rawToken = localStorage.getItem("token");
   const payload = parseJwt(rawToken);
   const now = new Date().getTime();
 
   const tokenValido = payload ? payload.exp * 1000 > now : false;
+
 
   const [user, setUser] = useState(
     payload && tokenValido

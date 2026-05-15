@@ -149,4 +149,31 @@ const Register = async (req, res) => {
   }
 };
 
-module.exports = { login, Register };
+
+const updateUser = async (req, res) => {
+
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+module.exports = { login, Register,updateUser };
