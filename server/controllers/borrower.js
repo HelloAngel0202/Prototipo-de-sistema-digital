@@ -46,7 +46,6 @@ const notifications = async (req, res) => {
 const acceptOffer = async (req, res) => {
   try {
     const { offerId } = req.query;
-    console.log(offerId);
 
     // Lógica para aceptar la oferta
     const query = "UPDATE client_request SET state = 'accepted' WHERE id = ?";

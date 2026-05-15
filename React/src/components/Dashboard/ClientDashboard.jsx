@@ -7,16 +7,15 @@ import { useEffect, useState } from 'react';
 function ClientDashboard({ user }) {
   const [publications, setPublications] = useState([]);
   const [notifications, setNotifications] = useState([]);
-  const [lenderInfos, setLenderInfos] = useState({}); 
+  const [lenderInfo, setLenderInfo] = useState({});
   const [loading, setLoading] = useState(true);
-  
-  const acceptOffer = (offerId) => {
-    
+
+  const acceptOffer = (offer) => {
     try {
-      axios.get(`http://localhost:3001/users/accept-offer?offerId=${offerId.client_request_id}`)
+      axios.get(`http://localhost:3001/users/accept-offer?offerId=${offer.client_request_id}`)
         .then(response => {
           alert('Has aceptado la oferta exitosamente');
-          setNotifications(prev => prev.filter(notificacion => notificacion.id !== offerId));
+          setNotifications(prev => prev.filter(notificacion => notificacion.id !== offer.id));
         })
         .catch(error => {
           console.error('Error al aceptar la oferta:', error);
@@ -28,18 +27,10 @@ function ClientDashboard({ user }) {
     }
   }
 
-  const getLenderInfo = async (lender_id) => {
-    try {
-      const response = await axios.get(
-        `http://localhost:3001/users/lender-info?lender_id=${lender_id}`
-      );
-      setLenderInfos(prev => ({ ...prev, [lender_id]: response.data })); // Almacena por id
-    } catch (error) {
-      console.error("Error obteniendo información del prestamista:", error);
-    }
-  };
-
   useEffect(() => {
+
+
+
     const obtenerPublicaciones = async () => {
       if (!user?.id) {
         setLoading(false);
@@ -57,25 +48,57 @@ function ClientDashboard({ user }) {
         setLoading(false);
       }
     };
-    const notifications = async (client_id) => {
+    const obtenerNotificaciones = async () => {
+      if (!user?.id) {
+        return;
+      }
+
       try {
         const response = await axios.get(
           `http://localhost:3001/users/notifications?client_id=${user.id}`
-        ).then((response) => {
-          setNotifications(response.data);
-        });
-
-        // Handle notifications data
+        );
+        setNotifications(response.data);
       } catch (error) {
         console.error('Error obteniendo notificaciones:', error);
       }
-
     };
 
-    notifications();
+    obtenerNotificaciones();
     obtenerPublicaciones();
-    
+
   }, [user]);
+
+  useEffect(() => {
+    if (notifications.length === 0) {
+      return;
+    }
+
+    const fetchLenders = async () => {
+      const uniqueLenderIds = [...new Set(notifications.map(n => n.lender_id))];
+
+      try {
+        const responses = await Promise.all(
+          uniqueLenderIds.map(id =>
+            axios.get(`http://localhost:3001/users/lender-info?lender_id=${id}`)
+          )
+        );
+
+        const infoMap = responses.reduce((acc, response, index) => {
+          const lenderId = uniqueLenderIds[index];
+          return {
+            ...acc,
+            [lenderId]: response.data,
+          };
+        }, {});
+
+        setLenderInfo(infoMap);
+      } catch (error) {
+        console.error('Error obteniendo información de prestamistas:', error);
+      }
+    };
+
+    fetchLenders();
+  }, [notifications]);
 
   // Datos simulados hasta que se conecte con el backend de angel 
   const stats = {
@@ -174,7 +197,7 @@ function ClientDashboard({ user }) {
           {notifications.map(notificacion => (
             <div key={notificacion.id} className="offer-card">
               <div className="offer-header">
-                <span className="bank-badge">{lenderInfos[notificacion.lender_id]?.name || 'Nombre no disponible'}</span>
+                <span className="bank-badge">{lenderInfo[notificacion.lender_id]?.name || 'Nombre no disponible'}</span>
                 <span className="rating">5⭐ {notificacion.puntos}</span>
               </div>
 
