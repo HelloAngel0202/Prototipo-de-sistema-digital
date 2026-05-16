@@ -13,7 +13,7 @@ function parseJwt(token) {
       .atob(base64)
       .split("")
       .map((c) => "%" + ("00" + c.charCodeAt(0).toString(16)).slice(-2))
-      .join("")
+      .join(""),
   );
   return JSON.parse(jsonPayload);
 }
@@ -22,6 +22,7 @@ function LoanRequestForm() {
   const navigate = useNavigate();
   const [amount, setAmount] = useState("");
   const [reason, setReason] = useState("");
+ 
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -38,27 +39,17 @@ function LoanRequestForm() {
 
     try {
       // 🔎 Verificar si el cliente tiene datos completos
-      const check = await axios.get("http://localhost:3001/users/userdate", {
-        params: { id: payload.id, clid: payload.clid, role: payload.role },
-        headers: { Authorization: `Bearer ${rawToken}` },
-      });
+      const check = await axios.get(
+        "http://localhost:3001/users/checkClientData",
+        {
+          params: { id: payload.id, clid: payload.clid, role: payload.role },
+          headers: { Authorization: `Bearer ${rawToken}` },
+        },
+      );
 
-      const { client } = check.data;
+    
 
-      if (
-        !client.first_name ||
-        !client.last_name ||
-        !client.phone ||
-        !client.nationality ||
-        !client.document ||
-        !client.document_type ||
-        !client.address ||
-        !client.city ||
-        !client.birth_date ||
-        !client.Estado_civil ||
-        !client.ocupation
-      ) {
-        // 🚨 Mostrar alerta si faltan datos
+      if (check.data === false) {
         Swal.fire({
           title: "Datos incompletos",
           text: "Debes completar todos tus datos personales antes de hacer una publicación.",
@@ -87,7 +78,7 @@ function LoanRequestForm() {
       const res = await axios.post(
         "http://localhost:3001/users/publications",
         requestData,
-        { headers: { Authorization: `Bearer ${rawToken}` } }
+        { headers: { Authorization: `Bearer ${rawToken}` } },
       );
 
       Swal.fire({

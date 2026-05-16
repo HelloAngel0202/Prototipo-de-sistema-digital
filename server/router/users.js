@@ -13,7 +13,7 @@ router.post("/register", auth.Register);
 router.put("/updateUser", auth.updateUser);
 router.post("/publications", Lender.publications);
 router.get("/userdate", auth.Userdate);
-
+router.get("/checkClientData", auth.checkClientData);
 router.get("/brpublic", borrower.publications);
 router.get("/my-publications", borrower.publications);
 router.post("/getRequestInfo", Lender.getRequestInfo);

@@ -323,4 +323,65 @@ const Userdate = async (req, res) => {
 };
 
 
-module.exports = { login, Register, updateUser, Userdate };
+const checkClientData = (req, res) => {
+  try {
+    const { clid, role } = req.query;
+
+    if (role === "cliente") {
+      bd.query(
+        "SELECT first_name, last_name, phone, cellphone, nationality, birth_date, ocupation, city, document, document_type, Estado_civil FROM client WHERE id = ?",
+        [clid],
+        (err, result) => {
+          if (err) {
+            console.error("Error al obtener cliente:", err);
+            return res.status(500).json(false);
+          }
+          if (result.length === 0) return res.json(false);
+
+          const c = result[0];
+          const completo =
+            c.first_name &&
+            c.last_name &&
+            (c.phone || c.cellphone) &&
+            c.nationality &&
+            c.birth_date &&
+            c.ocupation &&
+            c.city &&
+            c.document &&
+            c.document_type &&
+            c.Estado_civil;
+
+          return res.json(!!completo); // ✅ Solo true o false
+        }
+      );
+    } else if (role === "prestamista") {
+      bd.query(
+        "SELECT name, address, phone FROM lender WHERE id = ?",
+        [clid],
+        (err, result) => {
+          if (err) {
+            console.error("Error al obtener prestamista:", err);
+            return res.status(500).json(false);
+          }
+          if (result.length === 0) return res.json(false);
+
+          const l = result[0];
+          const completo = l.name && l.address && l.phone;
+
+          return res.json(!!completo); // ✅ Solo true o false
+        }
+      );
+    } else {
+      return res.json(false);
+    }
+  } catch (error) {
+    console.error("Error en checkClientData:", error);
+    res.status(500).json(false);
+  }
+};
+
+
+
+
+
+module.exports = { login, Register, updateUser, Userdate,checkClientData };

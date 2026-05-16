@@ -53,7 +53,7 @@ function Profile() {
       .then((res) => {
         const { client, user, lender } = res.data;
 
-        setRole(payload.role);
+        setRole(payload.role?.trim().toLowerCase());
 
         if (payload.role === "cliente") {
           // datos de client
@@ -108,6 +108,47 @@ function Profile() {
     Object.keys(updatedFormData).forEach((key) => {
       data.append(key, updatedFormData[key]);
     });
+    if (payload.role === "cliente") {
+  if (
+    !first_name ||
+    !last_name ||
+    !phone ||
+    !nationality ||
+    !document ||
+    !document_type ||
+    !address ||
+    !city ||
+    !birth_date ||
+    !Estado_civil ||
+    !occupation ||
+    !username
+  ) {
+    Swal.fire({
+      icon: "warning",
+      title: "Campos obligatorios",
+      text: "Todos los campos son obligatorios",
+    });
+
+    return;
+  }
+}
+
+if (payload.role === "prestamista") {
+  if (
+    !address ||
+    !phone ||
+    !second_phone ||
+    !username
+  ) {
+    Swal.fire({
+      icon: "warning",
+      title: "Campos obligatorios",
+      text: "Todos los campos son obligatorios",
+    });
+
+    return;
+  }
+}
 
     try {
       let body = {
@@ -116,6 +157,8 @@ function Profile() {
         role: payload.role,
         username,
       };
+
+      console.log("Datos a enviar:", payload.role);
 
       if (payload.role === "cliente") {
         body = {
@@ -146,6 +189,8 @@ function Profile() {
           second_phone,
         };
       }
+
+      ;
 
       const response = await axios.put(
         "http://localhost:3001/users/updateUser",
@@ -183,6 +228,7 @@ function Profile() {
               name="first_name"
               value={first_name}
               onChange={(e) => setFirst_name(e.target.value)}
+              required
             />
 
             <label>Apellido</label>
@@ -190,6 +236,7 @@ function Profile() {
               name="last_name"
               value={last_name}
               onChange={(e) => setLast_name(e.target.value)}
+              required
             />
 
             <label>Teléfono</label>
@@ -197,6 +244,7 @@ function Profile() {
               name="phone"
               value={phone}
               onChange={(e) => setPhone(e.target.value)}
+              required
             />
 
             <label>Nacionalidad</label>
@@ -204,6 +252,7 @@ function Profile() {
               name="nationality"
               value={nationality}
               onChange={(e) => setNationality(e.target.value)}
+              required
             />
             <label>Fecha de nacimiento</label>
             <input
@@ -211,6 +260,7 @@ function Profile() {
               name="birth_date"
               value={birth_date}
               onChange={(e) => setBirth_date(e.target.value)}
+              required
             />
 
             <label>Estado civil</label>
@@ -218,6 +268,7 @@ function Profile() {
               name="Estado_civil"
               value={Estado_civil}
               onChange={(e) => setEstado_civil(e.target.value)}
+              required
             />
 
             <label>Ocupación</label>
@@ -225,6 +276,7 @@ function Profile() {
               name="occupation"
               value={occupation}
               onChange={(e) => setOccupation(e.target.value)}
+              required
             />
 
             <label>Documento</label>
@@ -232,6 +284,7 @@ function Profile() {
               name="document"
               value={document}
               onChange={(e) => setDocument(e.target.value)}
+              required
             />
 
             <label>Tipo de documento</label>
@@ -239,6 +292,7 @@ function Profile() {
               name="document_type"
               value={document_type}
               onChange={(e) => setDocument_type(e.target.value)}
+              required
             />
 
             <label>Dirección</label>
@@ -246,6 +300,7 @@ function Profile() {
               name="address"
               value={address}
               onChange={(e) => setAddress(e.target.value)}
+              required
             />
 
             <label>Ciudad</label>
@@ -253,6 +308,7 @@ function Profile() {
               name="city"
               value={city}
               onChange={(e) => setCity(e.target.value)}
+              required
             />
           </>
         )}
@@ -264,6 +320,7 @@ function Profile() {
               name="address"
               value={address}
               onChange={(e) => setAddress(e.target.value)}
+              required
             />
 
             <label>Teléfono</label>
@@ -271,6 +328,7 @@ function Profile() {
               name="phone"
               value={phone}
               onChange={(e) => setPhone(e.target.value)}
+              required
             />
 
             <label>Segundo Teléfono</label>
@@ -278,6 +336,7 @@ function Profile() {
               name="second_phone"
               value={second_phone}
               onChange={(e) => setSecond_phone(e.target.value)}
+              required
             />
           </>
         )}
@@ -287,6 +346,7 @@ function Profile() {
           name="username"
           value={username}
           onChange={(e) => setUsername(e.target.value)}
+          required
         />
 
         <button type="submit">Guardar cambios</button>
