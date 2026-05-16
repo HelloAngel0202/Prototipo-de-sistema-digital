@@ -155,7 +155,8 @@ const updateUser = async (req, res) => {
   try {
     const {
       id, // id del usuario en tabla users
-      clid, // id del cliente en tabla client
+      clid,
+      role,
       first_name,
       last_name,
       phone,
@@ -168,97 +169,158 @@ const updateUser = async (req, res) => {
       Estado_civil,
       occupation,
       username,
+      second_phone,
     } = req.body;
 
-    // 1️⃣ Actualizar tabla client
-    bd.query(
-      `UPDATE client 
+    if (role === "cliente") {
+      bd.query(
+        `UPDATE client 
        SET first_name = ?, last_name = ?, phone = ?, nationality = ?, 
            birth_date = ?, ocupation = ?, city = ?, 
            document = ?, document_type = ?, Estado_civil = ?
        WHERE id = ?`,
-      [
-        first_name,
-        last_name,
-        phone,
-        nationality,
-        birth_date,
-        occupation,
-        city,
-        document,
-        document_type,
-        Estado_civil,
-        clid,
-      ],
-      (err, resultClient) => {
-        if (err) {
-          console.error("Error al actualizar cliente:", err);
-          return res.status(500).json({ message: "Error al actualizar cliente" });
-        }
+        [
+          first_name,
+          last_name,
+          phone,
+          nationality,
+          birth_date,
+          occupation,
+          city,
+          document,
+          document_type,
+          Estado_civil,
+          clid,
+        ],
+        (err, resultClient) => {
+          if (err) {
+            console.error("Error al actualizar cliente:", err);
+            return res
+              .status(500)
+              .json({ message: "Error al actualizar cliente" });
+          }
 
-        // 2️⃣ Actualizar tabla users
-        bd.query(
-          `UPDATE users 
+          // 2️⃣ Actualizar tabla users
+          bd.query(
+            `UPDATE users 
            SET username = ?, address = ?, updated_at = NOW()
            WHERE id = ?`,
-          [username, address, id],
-          (err, resultUser) => {
-            if (err) {
-              console.error("Error al actualizar usuario:", err);
-              return res.status(500).json({ message: "Error al actualizar usuario" });
-            }
+            [username, address, id],
+            (err, resultUser) => {
+              if (err) {
+                console.error("Error al actualizar usuario:", err);
+                return res
+                  .status(500)
+                  .json({ message: "Error al actualizar usuario" });
+              }
 
-            res.status(200).json({
-              message: "Usuario actualizado correctamente",
-              clientUpdate: resultClient.affectedRows,
-              userUpdate: resultUser.affectedRows,
-            });
+              res.status(200).json({
+                message: "Usuario actualizado correctamente",
+                clientUpdate: resultClient.affectedRows,
+                userUpdate: resultUser.affectedRows,
+              });
+            },
+          );
+        },
+      );
+    } else if (role === "prestamista") {
+      bd.query(
+        `UPDATE lender 
+         SET name = ?, address = ?, phone = ?, second_phone = ?
+         WHERE id = ?`,
+        [username, address, phone, second_phone, clid],
+        (err, resultLender) => {
+          if (err) {
+            console.error("Error al actualizar prestamista:", err);
+            return res
+              .status(500)
+              .json({ message: "Error al actualizar prestamista" });
           }
-        );
-      }
-    );
+
+          bd.query(
+            `UPDATE users SET username = ?, address = ?, updated_at = NOW() WHERE id = ?`,
+            [username, address, id],
+            (err, resultUser) => {
+              if (err) {
+                console.error("Error al actualizar usuario:", err);
+                return res
+                  .status(500)
+                  .json({ message: "Error al actualizar usuario" });
+              }
+
+              res.status(200).json({
+                message: "Prestamista actualizado correctamente",
+                lenderUpdate: resultLender.affectedRows,
+                userUpdate: resultUser.affectedRows,
+              });
+            },
+          );
+        },
+      );
+    } else {
+      return res.status(400).json({ message: "Rol inválido" });
+    }
+
+    // 1️⃣ Actualizar tabla client
   } catch (error) {
     console.error("Error en updateUser:", error);
     res.status(500).send("Error interno del servidor");
   }
 };
 
-
 // controllers/auth.js
 const Userdate = async (req, res) => {
   try {
-    const { id, clid } = req.query; // llegan desde params en axios.get
+    const { id, clid, role } = req.query; // llegan desde params en axios.get
 
-    bd.query("SELECT * FROM client WHERE id = ?", [clid], (err, clientResult) => {
-      if (err) {
-        console.error("Error al obtener cliente:", err);
-        return res.status(500).json({ message: "Error al obtener cliente" });
-      }
-
-      bd.query("SELECT * FROM users WHERE id = ?", [id], (err, userResult) => {
+    if (role === "cliente") {
+      // 🔹 Consultar client
+      bd.query("SELECT * FROM client WHERE id = ?", [clid], (err, clientResult) => {
         if (err) {
-          console.error("Error al obtener usuario:", err);
-          return res.status(500).json({ message: "Error al obtener usuario" });
+          console.error("Error al obtener cliente:", err);
+          return res.status(500).json({ message: "Error al obtener cliente" });
         }
 
-        // ✅ devolver ambos objetos
-        res.status(200).json({
-          client: clientResult[0] || {},
-          user: userResult[0] || {},
+        bd.query("SELECT * FROM users WHERE id = ?", [id], (err, userResult) => {
+          if (err) {
+            console.error("Error al obtener usuario:", err);
+            return res.status(500).json({ message: "Error al obtener usuario" });
+          }
+
+          res.status(200).json({
+            client: clientResult[0] || {},
+            user: userResult[0] || {},
+          });
         });
       });
-    });
+    } else if (role === "prestamista") {
+      // 🔹 Consultar lender
+      bd.query("SELECT * FROM lender WHERE id = ?", [clid], (err, lenderResult) => {
+        if (err) {
+          console.error("Error al obtener prestamista:", err);
+          return res.status(500).json({ message: "Error al obtener prestamista" });
+        }
+
+        bd.query("SELECT * FROM users WHERE id = ?", [id], (err, userResult) => {
+          if (err) {
+            console.error("Error al obtener usuario:", err);
+            return res.status(500).json({ message: "Error al obtener usuario" });
+          }
+
+          res.status(200).json({
+            lender: lenderResult[0] || {},
+            user: userResult[0] || {},
+          });
+        });
+      });
+    } else {
+      return res.status(400).json({ message: "Rol inválido" });
+    }
   } catch (error) {
     console.error("Error en Userdate:", error);
     res.status(500).send("Error interno del servidor");
   }
 };
-
-
-
-
-
-
 
 
 module.exports = { login, Register, updateUser, Userdate };

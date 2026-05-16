@@ -1,5 +1,5 @@
 import "./css/Profile.css";
-import { useState,useEffect } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
 import Swal from "sweetalert2";
@@ -19,7 +19,6 @@ function parseJwt(token) {
 }
 
 function Profile() {
-
   const navigate = useNavigate();
   const [first_name, setFirst_name] = useState("");
   const [last_name, setLast_name] = useState("");
@@ -33,11 +32,8 @@ function Profile() {
   const [occupation, setOccupation] = useState("");
   const [city, setCity] = useState("");
   const [username, setUsername] = useState("");
-
-
-  
-
-
+  const [role, setRole] = useState("");
+  const [second_phone, setSecond_phone] = useState("");
 
   useEffect(() => {
     const rawToken = localStorage.getItem("token");
@@ -47,49 +43,46 @@ function Profile() {
       navigate("/login");
       return;
     }
+    console.log("Payload id:", payload.id);
+    console.log("Payload role:", payload.role);
 
     axios
       .get("http://localhost:3001/users/userdate", {
-        params: { id: payload.id, clid: payload.clid,role: payload.role },
+        params: { id: payload.id, clid: payload.clid, role: payload.role },
       })
       .then((res) => {
-        const { client, user } = res.data;
-        const cleanDate = client.birth_date
-      ? client.birth_date.split("T")[0]
-      : "";
+        const { client, user, lender } = res.data;
 
-        setFirst_name(client.first_name || "");
-        setLast_name(client.last_name || "");
-        setPhone(client.phone || "");
-        setNationality(client.nationality || "");
-        setDocument(client.document || "");
-        setDocument_type(client.document_type || "");
-        setAddress(user.address || "");
-        setBirth_date(cleanDate);
-        setEstado_civil(client.Estado_civil || "");
-        setOccupation(client.ocupation || "");
-        setCity(client.city || "");
-        setUsername(user.username || "");
+        setRole(payload.role);
+
+        if (payload.role === "cliente") {
+          // datos de client
+          setFirst_name(client.first_name || "");
+          setLast_name(client.last_name || "");
+          setPhone(client.phone || "");
+          setNationality(client.nationality || "");
+          setDocument(client.document || "");
+          setDocument_type(client.document_type || "");
+          setAddress(user.address || "");
+          setBirth_date(
+            client.birth_date ? client.birth_date.split("T")[0] : "",
+          );
+          setEstado_civil(client.Estado_civil || "");
+          setOccupation(client.ocupation || "");
+          setCity(client.city || "");
+          setUsername(user.username || "");
+        } else if (payload.role === "prestamista") {
+          // datos de lender
+          setAddress(lender.address || "");
+          setPhone(lender.phone || "");
+          setSecond_phone(lender.second_phone || "");
+          setUsername(user.username || "");
+        }
       })
       .catch((err) => {
         console.error("Error al cargar datos:", err);
       });
   }, []);
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -117,9 +110,15 @@ function Profile() {
     });
 
     try {
-      const response = await axios.put(
-        "http://localhost:3001/users/updateUser",
-        {
+      let body = {
+        id: payload.id,
+        clid: payload.clid,
+        role: payload.role,
+        username,
+      };
+
+      if (payload.role === "cliente") {
+        body = {
           id: payload.id,
           clid: payload.clid,
           role: payload.role,
@@ -135,7 +134,22 @@ function Profile() {
           Estado_civil,
           occupation,
           username,
-        },
+        };
+      } else if (payload.role === "prestamista") {
+        body = {
+          id: payload.id,
+          clid: payload.clid,
+          role: payload.role,
+          username,
+          address,
+          phone,
+          second_phone,
+        };
+      }
+
+      const response = await axios.put(
+        "http://localhost:3001/users/updateUser",
+        body,
       );
 
       console.log("Respuesta del servidor:", response.data);
@@ -162,82 +176,111 @@ function Profile() {
       <h2>Editar Perfil</h2>
 
       <form className="profile-form" onSubmit={handleSubmit}>
-        <label>Nombre</label>
-        <input
-          name="first_name"
-          value={first_name}
-          onChange={(e) => setFirst_name(e.target.value)}
-        />
+        {role === "cliente" && (
+          <>
+            <label>Nombre</label>
+            <input
+              name="first_name"
+              value={first_name}
+              onChange={(e) => setFirst_name(e.target.value)}
+            />
 
-        <label>Apellido</label>
-        <input
-          name="last_name"
-          value={last_name}
-          onChange={(e) => setLast_name(e.target.value)}
-        />
+            <label>Apellido</label>
+            <input
+              name="last_name"
+              value={last_name}
+              onChange={(e) => setLast_name(e.target.value)}
+            />
 
-        <label>Teléfono</label>
-        <input
-          name="phone"
-          value={phone}
-          onChange={(e) => setPhone(e.target.value)}
-        />
+            <label>Teléfono</label>
+            <input
+              name="phone"
+              value={phone}
+              onChange={(e) => setPhone(e.target.value)}
+            />
 
-        <label>Nacionalidad</label>
-        <input
-          name="nationality"
-          value={nationality}
-          onChange={(e) => setNationality(e.target.value)}
-        />
-        <label>Fecha de nacimiento</label>
-        <input
-          type="date"
-          name="birth_date"
-          value={birth_date}
-          onChange={(e) => setBirth_date(e.target.value)}
-        />
+            <label>Nacionalidad</label>
+            <input
+              name="nationality"
+              value={nationality}
+              onChange={(e) => setNationality(e.target.value)}
+            />
+            <label>Fecha de nacimiento</label>
+            <input
+              type="date"
+              name="birth_date"
+              value={birth_date}
+              onChange={(e) => setBirth_date(e.target.value)}
+            />
 
-        <label>Estado civil</label>
-        <input
-          name="Estado_civil"
-          value={Estado_civil}
-          onChange={(e) => setEstado_civil(e.target.value)}
-        />
+            <label>Estado civil</label>
+            <input
+              name="Estado_civil"
+              value={Estado_civil}
+              onChange={(e) => setEstado_civil(e.target.value)}
+            />
 
-        <label>Ocupación</label>
-        <input
-          name="occupation"
-          value={occupation}
-          onChange={(e) => setOccupation(e.target.value)}
-        />
+            <label>Ocupación</label>
+            <input
+              name="occupation"
+              value={occupation}
+              onChange={(e) => setOccupation(e.target.value)}
+            />
 
-        <label>Documento</label>
-        <input
-          name="document"
-          value={document}
-          onChange={(e) => setDocument(e.target.value)}
-        />
+            <label>Documento</label>
+            <input
+              name="document"
+              value={document}
+              onChange={(e) => setDocument(e.target.value)}
+            />
 
-        <label>Tipo de documento</label>
-        <input
-          name="document_type"
-          value={document_type}
-          onChange={(e) => setDocument_type(e.target.value)}
-        />
+            <label>Tipo de documento</label>
+            <input
+              name="document_type"
+              value={document_type}
+              onChange={(e) => setDocument_type(e.target.value)}
+            />
 
-        <label>Dirección</label>
-        <input
-          name="address"
-          value={address}
-          onChange={(e) => setAddress(e.target.value)}
-        />
+            <label>Dirección</label>
+            <input
+              name="address"
+              value={address}
+              onChange={(e) => setAddress(e.target.value)}
+            />
 
-        <label>Ciudad</label>
-        <input
-          name="city"
-          value={city}
-          onChange={(e) => setCity(e.target.value)}
-        />
+            <label>Ciudad</label>
+            <input
+              name="city"
+              value={city}
+              onChange={(e) => setCity(e.target.value)}
+            />
+          </>
+        )}
+
+        {role === "prestamista" && (
+          <>
+            <label>Dirección</label>
+            <input
+              name="address"
+              value={address}
+              onChange={(e) => setAddress(e.target.value)}
+            />
+
+            <label>Teléfono</label>
+            <input
+              name="phone"
+              value={phone}
+              onChange={(e) => setPhone(e.target.value)}
+            />
+
+            <label>Segundo Teléfono</label>
+            <input
+              name="second_phone"
+              value={second_phone}
+              onChange={(e) => setSecond_phone(e.target.value)}
+            />
+          </>
+        )}
 
         <label>Nombre de usuario</label>
         <input
