@@ -5,36 +5,71 @@ const publications = async (req, res) => {
   try {
     const { user_id, amount, reason } = req.body;
 
-    // Validar campos obligatorios
     if (!user_id || !amount || !reason) {
-      return res
-        .status(400)
-        .json({ message: "Todos los campos son requeridos" });
+      return res.status(400).json({ message: "Todos los campos son requeridos" });
     }
 
-    // Insertar publicación
-    db.query(
-      "INSERT INTO client_request (user_id ,amount,reason,created_at, state) VALUES (?, ?, ?, ?, ?)",
-      [user_id, amount, reason, new Date(), "pending"],
-      (err, result) => {
-        if (err) {
-          console.error("Error al crear publicación:", err);
-          return res
-            .status(500)
-            .json({ message: "Error al crear publicación" });
-        }
+    // Verificar datos del cliente
+    bd.query("SELECT * FROM client WHERE id = ?", [user_id], (err, clientResult) => {
+      if (err) {
+        console.error("Error al verificar cliente:", err);
+        return res.status(500).json({ message: "Error al verificar cliente" });
+      }
 
-        res.status(201).json({
-          message: "Publicación creada exitosamente",
-          id_publicacion: result.insertId,
+      if (clientResult.length === 0) {
+        return res.status(404).json({ message: "Cliente no encontrado" });
+      }
+
+      const c = clientResult[0];
+
+      // 🔎 Validar solo campos críticos
+      const camposCriticos = [
+        c.first_name,
+        c.last_name,
+        c.phone,
+        c.nationality,
+        c.document,
+        c.document_type,
+        c.address,
+        c.city,
+        c.birth_date,
+      ];
+
+      const incompletos = camposCriticos.some((campo) => !campo || campo === "");
+
+      if (incompletos) {
+        return res.status(400).json({
+          message: "El cliente debe completar sus datos personales antes de publicar",
         });
-      },
-    );
+      }
+
+      // Insertar publicación
+      bd.query(
+        "INSERT INTO client_request (user_id, amount, reason, created_at, state) VALUES (?, ?, ?, ?, ?)",
+        [user_id, amount, reason, new Date(), "pending"],
+        (err, result) => {
+          if (err) {
+            console.error("Error al crear publicación:", err);
+            return res.status(500).json({ message: "Error al crear publicación" });
+          }
+
+          res.status(201).json({
+            message: "Publicación creada exitosamente",
+            id_publicacion: result.insertId,
+          });
+        }
+      );
+    });
   } catch (error) {
     console.error("Error en publicación:", error);
     res.status(500).send("Error interno del servidor");
   }
 };
+
+
+
+
+
 const getLenderInfo = async (req, res) => {
   const { lender_id } = req.query;
 

@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, Link } from "react-router-dom";
 import axios from "axios";
 import "./LoanRequestForm.css";
 import Swal from "sweetalert2";
@@ -13,7 +13,7 @@ function parseJwt(token) {
       .atob(base64)
       .split("")
       .map((c) => "%" + ("00" + c.charCodeAt(0).toString(16)).slice(-2))
-      .join(""),
+      .join("")
   );
   return JSON.parse(jsonPayload);
 }
@@ -30,41 +30,72 @@ function LoanRequestForm() {
     const payload = parseJwt(rawToken);
 
     const tokenValido = payload?.exp * 1000 > Date.now();
-
-    console.log(payload);
-    console.log(tokenValido);
-
     if (!tokenValido) {
       alert("Tu sesión ha expirado.");
       navigate("/login");
       return;
     }
 
-    
-
-    const requestData = {
-      user_id: payload.id, // viene del JWT
-      amount: amount,
-      reason: reason,
-      state: "pendiente",
-    };
-
     try {
+      // 🔎 Verificar si el cliente tiene datos completos
+      const check = await axios.get("http://localhost:3001/users/userdate", {
+        params: { id: payload.id, clid: payload.clid, role: payload.role },
+        headers: { Authorization: `Bearer ${rawToken}` },
+      });
+
+      const { client } = check.data;
+
+      if (
+        !client.first_name ||
+        !client.last_name ||
+        !client.phone ||
+        !client.nationality ||
+        !client.document ||
+        !client.document_type ||
+        !client.address ||
+        !client.city ||
+        !client.birth_date ||
+        !client.Estado_civil ||
+        !client.ocupation
+      ) {
+        // 🚨 Mostrar alerta si faltan datos
+        Swal.fire({
+          title: "Datos incompletos",
+          text: "Debes completar todos tus datos personales antes de hacer una publicación.",
+          icon: "warning",
+          showCancelButton: true,
+          confirmButtonText: "Completar mis datos",
+          cancelButtonText: "Ir al dashboard",
+        }).then((result) => {
+          if (result.isConfirmed) {
+            navigate("/profile");
+          } else {
+            navigate("/dashboard");
+          }
+        });
+        return;
+      }
+
+      // ✅ Si los datos están completos, crear publicación
+      const requestData = {
+        user_id: payload.id,
+        amount,
+        reason,
+        state: "pendiente",
+      };
+
       const res = await axios.post(
         "http://localhost:3001/users/publications",
         requestData,
-        {
-          headers: { Authorization: `Bearer ${rawToken}` },
-        },
+        { headers: { Authorization: `Bearer ${rawToken}` } }
       );
-      console.log("Respuesta del backend:", res.data);
+
       Swal.fire({
         title: "Solicitud publicada exitosamente!",
-        html: "¡ Ahora espera a que los bancos te envíen sus propuestas.",
+        html: "¡Ahora espera a que los bancos te envíen sus propuestas!",
         icon: "success",
         timer: 3000,
       });
-      //alert("¡Solicitud publicada! Ahora espera a que los bancos te envíen sus propuestas.");
       navigate("/dashboard", { replace: true });
     } catch (error) {
       console.error("Error al publicar solicitud:", error);
