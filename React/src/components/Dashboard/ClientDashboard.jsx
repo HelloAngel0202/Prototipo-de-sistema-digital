@@ -3,12 +3,48 @@ import { Link } from 'react-router-dom';
 import OfferList from '../Offers/OfferList';
 import axios from 'axios';
 import { useEffect, useState } from 'react';
+import Swal from "sweetalert2";
 
 function ClientDashboard({ user }) {
   const [publications, setPublications] = useState([]);
+  const [notifications, setNotifications] = useState([]);
+  const [lenderInfo, setLenderInfo] = useState({});
   const [loading, setLoading] = useState(true);
 
+  const acceptOffer = (offer) => {
+    try {
+      axios.get(`http://localhost:3001/users/accept-offer?offerId=${offer.client_request_id}`)
+        .then(response => {
+          setNotifications(prev => prev.filter(notificacion => notificacion.id !== offer.id));
+
+          Swal.fire({
+            title: "Aceptado",
+            html: "¡Oferta aceptada exitosamente!",
+            icon: "success",
+            timer: 2000,
+            showConfirmButton: false,
+          });
+        })
+        .catch(error => {
+          console.error('Error al aceptar la oferta:', error);
+          Swal.fire({
+            title: "Error",
+            html: "Hubo un error al aceptar la oferta. Por favor, intenta nuevamente.",
+            icon: "error",
+            timer: 2000,
+            showConfirmButton: false,
+          });
+        });
+    } catch (error) {
+      console.error('Error al aceptar la oferta:', error);
+      alert('Hubo un error al aceptar la oferta. Por favor, intenta nuevamente.2');
+    }
+  }
+
   useEffect(() => {
+
+
+
     const obtenerPublicaciones = async () => {
       if (!user?.id) {
         setLoading(false);
@@ -26,9 +62,57 @@ function ClientDashboard({ user }) {
         setLoading(false);
       }
     };
+    const obtenerNotificaciones = async () => {
+      if (!user?.id) {
+        return;
+      }
 
+      try {
+        const response = await axios.get(
+          `http://localhost:3001/users/notifications?client_id=${user.id}`
+        );
+        setNotifications(response.data);
+      } catch (error) {
+        console.error('Error obteniendo notificaciones:', error);
+      }
+    };
+
+    obtenerNotificaciones();
     obtenerPublicaciones();
+
   }, [user]);
+
+  useEffect(() => {
+    if (notifications.length === 0) {
+      return;
+    }
+
+    const fetchLenders = async () => {
+      const uniqueLenderIds = [...new Set(notifications.map(n => n.lender_id))];
+
+      try {
+        const responses = await Promise.all(
+          uniqueLenderIds.map(id =>
+            axios.get(`http://localhost:3001/users/lender-info?lender_id=${id}`)
+          )
+        );
+
+        const infoMap = responses.reduce((acc, response, index) => {
+          const lenderId = uniqueLenderIds[index];
+          return {
+            ...acc,
+            [lenderId]: response.data,
+          };
+        }, {});
+
+        setLenderInfo(infoMap);
+      } catch (error) {
+        console.error('Error obteniendo información de prestamistas:', error);
+      }
+    };
+
+    fetchLenders();
+  }, [notifications]);
 
   // Datos simulados hasta que se conecte con el backend de angel 
   const stats = {
@@ -119,8 +203,28 @@ function ClientDashboard({ user }) {
           ))
         )}
       </section>
+      <div className="offers-container">
+        <h3>Ofertas Recibidas</h3>
+        <p className="offers-subtitle">Compara las condiciones y elige la que prefieras</p>
 
-      <OfferList />
+        <div className="offers-grid">
+          {notifications.map(notificacion => (
+            <div key={notificacion.id} className="offer-card">
+              <div className="offer-header">
+                <span className="bank-badge">{lenderInfo[notificacion.lender_id]?.name || 'Nombre no disponible'}</span>
+                <span className="rating">5⭐ {notificacion.puntos}</span>
+              </div>
+
+              <div className="offer-footer">
+                <span className="type-tag">{notificacion.tipo}</span>
+                <button className="btn-accept" onClick={() => acceptOffer(notificacion)}>
+                  Permitir acceso a mi información
+                </button>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
     </div>
   );
 }

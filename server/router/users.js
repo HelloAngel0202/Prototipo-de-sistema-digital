@@ -15,6 +15,11 @@ router.post("/publications", Lender.publications);
 router.get("/userdate", auth.Userdate);
 router.get("/brpublic", borrower.publications);
 router.get("/my-publications", borrower.publications);
+router.post("/getRequestInfo", Lender.getRequestInfo);
+router.get("/notifications", borrower.notifications);
+router.get("/lender-info", Lender.getLenderInfo);
+router.get("/accept-offer", borrower.acceptOffer);
+router.get("/sended-notifications", borrower.sendedNotifications);
 
 
 
