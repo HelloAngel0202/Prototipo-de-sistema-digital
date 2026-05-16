@@ -10,10 +10,12 @@ const borrower  = require("../controllers/borrower");
 
 router.post("/login", auth.login);
 router.post("/register", auth.Register);
-router.put("/register", auth.updateUser);
+router.put("/updateUser", auth.updateUser);
 router.post("/publications", Lender.publications);
+router.get("/userdate", auth.Userdate);
 router.get("/brpublic", borrower.publications);
 router.get("/my-publications", borrower.publications);
+
 
 
 module.exports = router;

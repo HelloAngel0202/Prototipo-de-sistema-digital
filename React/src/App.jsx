@@ -39,6 +39,7 @@ function App() {
     payload && tokenValido
       ? {
           id: payload.id,
+          clid: payload.clid,
           name: payload.name_user,
           role: payload.role,
           photo: payload.photo,

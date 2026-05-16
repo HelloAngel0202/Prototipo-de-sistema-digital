@@ -28,13 +28,14 @@ const login = async (req, res) => {
         }
 
         const token = jwt.sign(
-           {
+          {
             id: user.id,
+            clid: user.information_id,
             email: user.email,
             name_user: user.username,
             role: user.role,
-            photo: "https://img.a.transfermarkt.technology/portrait/big/8198-1748102259.jpg?lm=1",
-            
+            photo:
+              "https://img.a.transfermarkt.technology/portrait/big/8198-1748102259.jpg?lm=1",
           },
           process.env.JWT_SECRET || "Stack",
           { expiresIn: "1h" },
@@ -100,59 +101,158 @@ const Register = async (req, res) => {
 
     // 2️⃣ Crear usuario en tabla users
     function crearUsuario(infoId) {
-  bd.query(
-    `INSERT INTO users 
+      bd.query(
+        `INSERT INTO users 
     (information_id, username, email, role, password ) 
     VALUES (?, ?, ?, ?, ?)`,
-    [infoId, name, email, role, hashedPassword],
-    (err, resultUser) => {
-      if (err) {
-        console.error("Error al registrar usuario:", err);
-        return res
-          .status(500)
-          .json({ message: "Error al registrar usuario" });
-      }
+        [infoId, name, email, role, hashedPassword],
+        (err, resultUser) => {
+          if (err) {
+            console.error("Error al registrar usuario:", err);
+            return res
+              .status(500)
+              .json({ message: "Error al registrar usuario" });
+          }
 
-      // Construir el objeto user manualmente
-      const user = {
-        id: resultUser.insertId,
-        email,
-        username: name,
-        role,
-        photo: "https://img.a.transfermarkt.technology/portrait/big/8198-1748102259.jpg?lm=1",
-      };
+          // Construir el objeto user manualmente
+          const user = {
+            id: resultUser.insertId,
+            email,
+            username: name,
+            role,
+            photo:
+              "https://img.a.transfermarkt.technology/portrait/big/8198-1748102259.jpg?lm=1",
+          };
 
-      const token = jwt.sign(
-        {
-          id: user.id,
-          email: user.email,
-          name_user: user.username,
-          role: user.role,
-          photo: user.photo,
+          const token = jwt.sign(
+            {
+              id: user.id,
+              clid: user.information_id,
+              email: user.email,
+              name_user: user.username,
+              role: user.role,
+              photo: user.photo,
+            },
+            process.env.JWT_SECRET || "Stack",
+            { expiresIn: "1h" },
+          );
+
+          res.status(201).json({
+            message: "Usuario registrado exitosamente",
+            user,
+            token,
+          });
         },
-        process.env.JWT_SECRET || "Stack",
-        { expiresIn: "1h" },
       );
-
-      res.status(201).json({
-        message: "Usuario registrado exitosamente",
-        user,
-        token,
-      });
-    },
-  );
-}
-
+    }
   } catch (error) {
     console.error("Error en registro:", error);
     res.status(500).send("Error interno del servidor");
   }
 };
 
-
 const updateUser = async (req, res) => {
+  try {
+    const {
+      id, // id del usuario en tabla users
+      clid, // id del cliente en tabla client
+      first_name,
+      last_name,
+      phone,
+      nationality,
+      document,
+      document_type,
+      address,
+      city,
+      birth_date,
+      Estado_civil,
+      occupation,
+      username,
+    } = req.body;
 
-}
+    // 1️⃣ Actualizar tabla client
+    bd.query(
+      `UPDATE client 
+       SET first_name = ?, last_name = ?, phone = ?, nationality = ?, 
+           birth_date = ?, ocupation = ?, city = ?, 
+           document = ?, document_type = ?, Estado_civil = ?
+       WHERE id = ?`,
+      [
+        first_name,
+        last_name,
+        phone,
+        nationality,
+        birth_date,
+        occupation,
+        city,
+        document,
+        document_type,
+        Estado_civil,
+        clid,
+      ],
+      (err, resultClient) => {
+        if (err) {
+          console.error("Error al actualizar cliente:", err);
+          return res.status(500).json({ message: "Error al actualizar cliente" });
+        }
+
+        // 2️⃣ Actualizar tabla users
+        bd.query(
+          `UPDATE users 
+           SET username = ?, address = ?, updated_at = NOW()
+           WHERE id = ?`,
+          [username, address, id],
+          (err, resultUser) => {
+            if (err) {
+              console.error("Error al actualizar usuario:", err);
+              return res.status(500).json({ message: "Error al actualizar usuario" });
+            }
+
+            res.status(200).json({
+              message: "Usuario actualizado correctamente",
+              clientUpdate: resultClient.affectedRows,
+              userUpdate: resultUser.affectedRows,
+            });
+          }
+        );
+      }
+    );
+  } catch (error) {
+    console.error("Error en updateUser:", error);
+    res.status(500).send("Error interno del servidor");
+  }
+};
+
+
+// controllers/auth.js
+const Userdate = async (req, res) => {
+  try {
+    const { id, clid } = req.query; // llegan desde params en axios.get
+
+    bd.query("SELECT * FROM client WHERE id = ?", [clid], (err, clientResult) => {
+      if (err) {
+        console.error("Error al obtener cliente:", err);
+        return res.status(500).json({ message: "Error al obtener cliente" });
+      }
+
+      bd.query("SELECT * FROM users WHERE id = ?", [id], (err, userResult) => {
+        if (err) {
+          console.error("Error al obtener usuario:", err);
+          return res.status(500).json({ message: "Error al obtener usuario" });
+        }
+
+        // ✅ devolver ambos objetos
+        res.status(200).json({
+          client: clientResult[0] || {},
+          user: userResult[0] || {},
+        });
+      });
+    });
+  } catch (error) {
+    console.error("Error en Userdate:", error);
+    res.status(500).send("Error interno del servidor");
+  }
+};
 
 
 
@@ -161,19 +261,4 @@ const updateUser = async (req, res) => {
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-module.exports = { login, Register,updateUser };
+module.exports = { login, Register, updateUser, Userdate };

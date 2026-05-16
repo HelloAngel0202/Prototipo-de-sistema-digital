@@ -40,11 +40,7 @@ function LoanRequestForm() {
       return;
     }
 
-    if (!tokenValido) {
-      alert("Tu sesión ha expirado. Inicia sesión nuevamente.");
-      navigate("/login");
-      return;
-    }
+    
 
     const requestData = {
       user_id: payload.id, // viene del JWT
