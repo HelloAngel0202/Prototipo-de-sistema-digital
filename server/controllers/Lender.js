@@ -1,6 +1,30 @@
 const { request } = require("express");
 const db = require("../bd");
 
+const createLenderConditions = async (req, res) => {
+  const { request_id, lender_id, approved_amount, interest, interest_type,rate_revision_period, amortization_system, fees_count, estimated_fee_amount, closing_costs, late_fee_percentage, message, expiration_date } = req.body;
+  console.log("Datos recibidos para crear condiciones del prestamista:", req.body);
+  try {
+    if (!request_id  || !lender_id || !approved_amount || !interest || !interest_type || !rate_revision_period || !amortization_system || !fees_count || !estimated_fee_amount || !closing_costs || !late_fee_percentage || !message || !expiration_date) {
+      return res.status(400).json({ message: "Todos los campos son requeridos" });
+    }
+    db.query(
+      "INSERT INTO lender_conditions (request_id, lender_id, approved_amount, interest, interest_type, rate_revision_period, amortization_system, fees_count, estimated_fee_amount, closing_costs, late_fee_percentage, message, expiration_date, state, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+      [request_id, lender_id, approved_amount, interest, interest_type, rate_revision_period, amortization_system, fees_count, estimated_fee_amount, closing_costs, late_fee_percentage, message, expiration_date, 'pending', new Date(), new Date()],
+      (err, result) => {
+        if (err) {
+          console.error("Error al crear condiciones del prestamista:", err);
+          return res.status(500).json({ message: "Error al crear condiciones del prestamista" });
+        }
+        res.status(201).json({ message: "Condiciones del prestamista creadas exitosamente", id: result.insertId });
+      }
+    );
+  } catch (error) {
+    console.error("Error en crear condiciones del prestamista:", error);
+    res.status(500).send("Error interno del servidor");
+  }
+};
+
 const publications = async (req, res) => {
   try {
     const { user_id, amount, reason } = req.body;
@@ -103,6 +127,7 @@ const getRequestInfo = async (req, res) => {
 
 module.exports = {
   publications,
+  createLenderConditions,
   getRequestInfo,
   getLenderInfo,
 };

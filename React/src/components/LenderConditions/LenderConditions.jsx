@@ -1,8 +1,11 @@
 import React, { useState } from 'react';
 import './LenderConditions.css';
+import axios from 'axios';
 
 const LenderConditions = () => {
     const [formData, setFormData] = useState({
+        lender_id: 13, // Este valor debería ser dinámico, basado en el usuario autenticado
+        request_id: 11, // Este valor también debería ser dinámico, basado en la solicitud que se está respondiendo
         approved_amount: '',
         interest: '',
         interest_type: 'fixed',
@@ -14,7 +17,7 @@ const LenderConditions = () => {
         late_fee_percentage: '',
         message: '',
         expiration_date: '',
-        state: 'active',
+        state: 'pending',
         created_at: new Date(),
         updated_at: new Date(),
     });
@@ -30,7 +33,17 @@ const LenderConditions = () => {
     const handleSubmit = (e) => {
         e.preventDefault();
         console.log('Form Data:', formData);
-        // Aquí puedes enviar los datos al servidor
+        try {
+            axios.post('http://localhost:3001/users/lender-conditions', formData)
+                .then(response => {
+                    console.log('Condiciones guardadas:', response.data);
+                })
+                .catch(error => {
+                    console.error('Error al guardar condiciones:', error);
+                });
+        } catch (error) {
+            console.error('Error al guardar condiciones:', error);
+        }
     };
 
     return (
