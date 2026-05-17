@@ -1,6 +1,7 @@
 import "./BankDashboard.css";
 import axios from "axios";
 import { useState, useEffect } from "react";
+import { Link } from 'react-router-dom';
 
 function BankDashboard({ user }) {
   const [publications, setPublications] = useState([]);
@@ -94,6 +95,24 @@ function BankDashboard({ user }) {
                 <span className="amount-tag">
                   <h2>{notification.client_name}</h2>
                 </span>
+                <span className="amount-tag">
+                  <h2>{notification.state == 2 ? "Aceptada" : "Pendiente"}</h2>
+                </span>
+                <div>
+                  {notification.state == 2 ?
+                    (<div>
+                      <div>
+                        <Link to="/lender-conditions" className='btn-action'>Enviar condiciones </Link>
+                      </div>
+                    </div>) :
+                    (
+                      <div>
+                        {/* // DArle estilos al boton disabled */}
+                        <button disabled> Espera a que el cliente acepte su solicitud</button>
+                      </div>
+                    )
+                  }
+                </div>
                 <p>
                   {/* <button onClick={() => { getInformationRequest(notification.client_id, user.id) }}>Solicitar información</button> */}
                 </p>

@@ -9,6 +9,7 @@ import Login from "./components/Auth/Login";
 import ClientDashboard from "./components/Dashboard/ClientDashboard";
 import BankDashboard from "./components/Dashboard/BankDashboard";
 import LoanRequestForm from "./components/LoanRequest/LoanRequestForm";
+import LenderConditions from "./components/LenderConditions/LenderConditions";
 
 function parseJwt(token) {
   if (!token) return null; // Evita el error si es null
@@ -38,12 +39,12 @@ function App() {
   const [user, setUser] = useState(
     payload && tokenValido
       ? {
-          id: payload.id,
-          clid: payload.clid,
-          name: payload.name_user,
-          role: payload.role,
-          photo: payload.photo,
-        }
+        id: payload.id,
+        clid: payload.clid,
+        name: payload.name_user,
+        role: payload.role,
+        photo: payload.photo,
+      }
       : null,
   );
   // const [user, setUser] = useState(null);
@@ -85,16 +86,18 @@ function App() {
             user ? <Settings user={user} /> : <Navigate to="/login" />
           }
         />
-        
-        
+        <Route
+          path="/lender-conditions"
+          element={<LenderConditions />} />
+
         <Route
           path="/dashboard"
           element={
-            user ? (user.role === "prestamista" ? (<BankDashboard user={user} />) : (<ClientDashboard user={user}/>)) : <Navigate to="/login" />
+            user ? (user.role === "prestamista" ? (<BankDashboard user={user} />) : (<ClientDashboard user={user} />)) : <Navigate to="/login" />
           }
         />
       </Routes>
-      
+
     </div>
   );
 }
