@@ -49,7 +49,7 @@ const sendedNotifications = async (req, res) => {
 const notifications = async (req, res) => {
   try {
     const { client_id } = req.query;
-    const query = "SELECT * FROM notifications WHERE client_id = ? AND state = 'pending'";
+    const query = "SELECT * FROM notifications WHERE client_id = ? AND state = 1";
     const params = [client_id];
 
     db.query(query, params, (err, results) => {
@@ -68,11 +68,26 @@ const notifications = async (req, res) => {
 
 const acceptOffer = async (req, res) => {
   try {
-    const { offerId } = req.query;
+    const { offerId, clientRequestId } = req.query;
 
-    // Lógica para aceptar la oferta
-    const query = "UPDATE client_request SET state = 'accepted' WHERE id = ?";
-    db.query(query, [offerId], (err, results) => {
+    if (!offerId) {
+      return res.status(400).json({ message: "El ID de la oferta es requerido" });
+    }
+    const updateNotificationsQuery = "UPDATE notifications SET state = 2 WHERE id = ?";
+    db.query(updateNotificationsQuery, [offerId], (err2, results2) => {
+      if (err2) {
+        console.error("Error al actualizar notificaciones:", err2);
+        return res.status(500).json({ message: "Error al actualizar notificaciones" });
+      }
+
+      if (results2.affectedRows === 0) {
+        console.warn("No se encontraron notificaciones para actualizar");
+      }
+
+      res.status(200).json({ message: "Oferta aceptada y notificaciones actualizadas exitosamente" });
+    });
+    const updateRequestQuery = "UPDATE client_request SET state = 'accepted' WHERE id = ?";
+    db.query(updateRequestQuery, [clientRequestId], (err, results) => {
       if (err) {
         console.error("Error al aceptar la oferta:", err);
         return res.status(500).json({ message: "Error al aceptar la oferta" });
@@ -81,15 +96,13 @@ const acceptOffer = async (req, res) => {
       if (results.affectedRows === 0) {
         return res.status(404).json({ message: "Oferta no encontrada" });
       }
-
-      res.status(200).json({ message: "Oferta aceptada exitosamente" });
     });
+
   } catch (error) {
     console.error("Error interno:", error);
     res.status(500).send("Error interno del servidor");
-  }
-};
-
+  };
+}
 module.exports = {
   publications,
   notifications,

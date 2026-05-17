@@ -6,15 +6,17 @@ function BankDashboard({ user }) {
   const [publications, setPublications] = useState([]);
   const [notifications, setNotifications] = useState([]);
 
-  const getInformationRequest = async (solicitud_id, lender_id) => {
+  const getInformationRequest = async (client_request_id, lender_id, client_id) => {
     try {
       const response = await axios.post(
-        `http://localhost:3001/users/getRequestInfo?request_id=${solicitud_id}&lender_id=${lender_id}`,
+        `http://localhost:3001/users/getRequestInfo?client_request_id=${client_request_id}&lender_id=${lender_id}&client_id=${client_id}`,
         {
-          request_id: solicitud_id,
-          lender_id: lender_id
+          client_request_id: client_request_id,
+          lender_id: lender_id,
+          client_id: client_id
         }
       );
+      alert("Solicitud de información enviada al cliente. Espera su respuesta para acceder a los detalles de su solicitud.");
     } catch (error) {
       console.error("Error obteniendo información de la solicitud:", error);
     }
@@ -28,7 +30,6 @@ function BankDashboard({ user }) {
           "http://localhost:3001/users/brpublic"
         );
 
-
         setPublications(response.data);
       } catch (error) {
         console.error("Error obteniendo publicaciones:", error);
@@ -38,7 +39,6 @@ function BankDashboard({ user }) {
 
 
       try {
-        console.log(user.id);
         const response = await axios.get(
           `http://localhost:3001/users/sended-notifications?lender_id=${user.id}`
         );
@@ -75,7 +75,7 @@ function BankDashboard({ user }) {
               </span>
               <p>{solicitud.reason}</p>
               <p>
-                <button onClick={() => { getInformationRequest(solicitud.user_id, user.id) }}>Solicitar información</button>
+                <button onClick={() => { getInformationRequest(solicitud.id, user.id, solicitud.user_id) }}>Solicitar información</button>
               </p>
             </div>
             <p className="publication-meta">
@@ -95,7 +95,7 @@ function BankDashboard({ user }) {
                   <h2>{notification.client_name}</h2>
                 </span>
                 <p>
-                  <button onClick={() => { getInformationRequest(notification.client_id, user.id) }}>Solicitar información</button>
+                  {/* <button onClick={() => { getInformationRequest(notification.client_id, user.id) }}>Solicitar información</button> */}
                 </p>
               </div>
               <p className="publication-meta">

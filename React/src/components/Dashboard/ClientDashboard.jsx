@@ -13,7 +13,7 @@ function ClientDashboard({ user }) {
 
   const acceptOffer = (offer) => {
     try {
-      axios.get(`http://localhost:3001/users/accept-offer?offerId=${offer.client_request_id}`)
+      axios.get(`http://localhost:3001/users/accept-offer?offerId=${offer.id}&clientRequestId=${offer.client_request_id}`)
         .then(response => {
           setNotifications(prev => prev.filter(notificacion => notificacion.id !== offer.id));
 
@@ -71,6 +71,7 @@ function ClientDashboard({ user }) {
         const response = await axios.get(
           `http://localhost:3001/users/notifications?client_id=${user.id}`
         );
+        console.log('Notificaciones obtenidas:', response.data);
         setNotifications(response.data);
       } catch (error) {
         console.error('Error obteniendo notificaciones:', error);

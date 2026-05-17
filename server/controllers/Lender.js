@@ -68,10 +68,10 @@ const getLenderInfo = async (req, res) => {
 
 const getRequestInfo = async (req, res) => {
   try {
-    const { request_id, lender_id } = req.query;
+    const { client_request_id, lender_id, client_id } = req.query;
 
     // Validar campo obligatorio
-    if (!request_id || !lender_id) {
+    if (!client_request_id || !lender_id || !client_id) {
       return res
         .status(400)
         .json({ message: "El ID de la solicitud y el ID del prestamista son requeridos" });
@@ -79,8 +79,8 @@ const getRequestInfo = async (req, res) => {
 
     // Enviar solicitud al cliente
     db.query(
-      "INSERT INTO notifications (lender_id, client_id, created_at, updated_at, state) VALUES (?, ?, ?, ?, ?)",
-      [lender_id, request_id, new Date(), new Date(), 1],
+      "INSERT INTO notifications (client_request_id, lender_id, client_id, created_at, updated_at, state) VALUES (?, ?, ?, ?, ?, ?)",
+      [client_request_id, lender_id, client_id, new Date(), new Date(), 1],
       (err, result) => {
         if (err) {
           console.error("Error al obtener información de la solicitud:", err);
