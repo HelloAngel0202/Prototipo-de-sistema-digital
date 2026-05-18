@@ -10,6 +10,7 @@ const borrower  = require("../controllers/borrower");
 
 router.post("/login", auth.login);
 router.post("/register", auth.Register);
+router.post("/verify-email", auth.verifyEmail);
 router.put("/updateUser", auth.updateUser);
 router.post("/publications", Lender.publications);
 router.get("/userdate", auth.Userdate);

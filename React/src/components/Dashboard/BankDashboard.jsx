@@ -9,6 +9,7 @@ function BankDashboard({ user }) {
 
   const getInformationRequest = async (client_request_id, lender_id, client_id) => {
     try {
+       console.log(lender_id)
       const response = await axios.post(
         `http://localhost:3001/users/getRequestInfo?client_request_id=${client_request_id}&lender_id=${lender_id}&client_id=${client_id}`,
         {
@@ -16,6 +17,7 @@ function BankDashboard({ user }) {
           lender_id: lender_id,
           client_id: client_id
         }
+       
       );
       alert("Solicitud de información enviada al cliente. Espera su respuesta para acceder a los detalles de su solicitud.");
     } catch (error) {

@@ -1,6 +1,15 @@
 const bd = require("../bd");
 const jwt = require("jsonwebtoken");
 const bcrypt = require("bcrypt");
+const nodemailer = require("nodemailer");
+
+const transporter = nodemailer.createTransport({
+  service: "gmail",
+  auth: {
+    user: process.env.EMAIL_USER,
+    pass: process.env.EMAIL_PASS,
+  },
+});
 
 // LOGIN
 const login = async (req, res) => {
@@ -55,99 +64,324 @@ const Register = async (req, res) => {
   try {
     const { name, email, role, password } = req.body;
 
+    // ==========================
+    // VALIDAR CAMPOS
+    // ==========================
+
     if (!name || !email || !role || !password) {
-      return res
-        .status(400)
-        .json({ message: "Todos los campos son requeridos" });
+      return res.status(400).json({
+        message: "Todos los campos son requeridos",
+      });
     }
 
-    const hashedPassword = await bcrypt.hash(password, 10);
+    // ==========================
+    // VALIDAR ROL
+    // ==========================
 
-    // 1️⃣ Insertar primero en client o lender
-    let infoId;
-    if (role === "cliente") {
-      bd.query(
-        "INSERT INTO client (first_name, ocupation) VALUES (?, ?)",
-        [name, "pendiente"],
-        (err, resultClient) => {
-          if (err) {
-            console.error("Error al insertar cliente:", err);
-            return res
-              .status(500)
-              .json({ message: "Error al registrar cliente" });
-          }
-          infoId = resultClient.insertId;
-          crearUsuario(infoId);
-        },
-      );
-    } else if (role === "prestamista") {
-      bd.query(
-        "INSERT INTO lender (name, address) VALUES (?, ?)",
-        [name, email],
-        (err, resultLender) => {
-          if (err) {
-            console.error("Error al insertar prestamista:", err);
-            return res
-              .status(500)
-              .json({ message: "Error al registrar prestamista" });
-          }
-          infoId = resultLender.insertId;
-          crearUsuario(infoId);
-        },
-      );
-    } else {
-      return res.status(400).json({ message: "Rol inválido" });
+    if (role !== "cliente" && role !== "prestamista") {
+      return res.status(400).json({
+        message: "Rol inválido",
+      });
     }
 
-    // 2️⃣ Crear usuario en tabla users
-    function crearUsuario(infoId) {
-      bd.query(
-        `INSERT INTO users 
-    (information_id, username, email, role, password ) 
-    VALUES (?, ?, ?, ?, ?)`,
-        [infoId, name, email, role, hashedPassword],
-        (err, resultUser) => {
-          if (err) {
-            console.error("Error al registrar usuario:", err);
-            return res
-              .status(500)
-              .json({ message: "Error al registrar usuario" });
-          }
+    // ==========================
+    // VERIFICAR SI EL EMAIL YA EXISTE
+    // ==========================
 
-          // Construir el objeto user manualmente
-          const user = {
-            id: resultUser.insertId,
-            email,
-            username: name,
-            role,
-            photo:
-              "https://img.a.transfermarkt.technology/portrait/big/8198-1748102259.jpg?lm=1",
-          };
+    bd.query(
+      "SELECT id FROM users WHERE email = ?",
+      [email],
+      async (err, userResult) => {
+        if (err) {
+          console.error("Error verificando email:", err);
 
-          const token = jwt.sign(
-            {
-              id: user.id,
-              clid: user.information_id,
-              email: user.email,
-              name_user: user.username,
-              role: user.role,
-              photo: user.photo,
-            },
-            process.env.JWT_SECRET || "Stack",
-            { expiresIn: "1h" },
-          );
-
-          res.status(201).json({
-            message: "Usuario registrado exitosamente",
-            user,
-            token,
+          return res.status(500).json({
+            message: "Error interno del servidor",
           });
-        },
-      );
-    }
+        }
+
+        if (userResult.length > 0) {
+          return res.status(400).json({
+            message: "El correo ya está registrado",
+          });
+        }
+
+        // ==========================
+        // HASH PASSWORD
+        // ==========================
+
+        const hashedPassword = await bcrypt.hash(password, 10);
+
+        // ==========================
+        // GENERAR CÓDIGO
+        // ==========================
+
+        const codigo = Math.floor(100000 + Math.random() * 900000).toString();
+
+        // ==========================
+        // ELIMINAR CÓDIGOS ANTERIORES
+        // ==========================
+
+        bd.query(
+          "DELETE FROM email_codes WHERE email = ?",
+          [email],
+          async (deleteErr) => {
+            if (deleteErr) {
+              console.error("Error eliminando códigos anteriores:", deleteErr);
+
+              return res.status(500).json({
+                message: "Error interno del servidor",
+              });
+            }
+
+            // ==========================
+            // GUARDAR DATOS TEMPORALES
+            // ==========================
+
+            bd.query(
+              `
+              INSERT INTO email_codes
+              (email, code, name, role, password, expires_at)
+              VALUES (?, ?, ?, ?, ?, DATE_ADD(NOW(), INTERVAL 10 MINUTE))
+              `,
+              [email, codigo, name, role, hashedPassword],
+              async (insertErr) => {
+                if (insertErr) {
+                  console.error("Error guardando código:", insertErr);
+
+                  return res.status(500).json({
+                    message: "Error interno del servidor",
+                  });
+                }
+
+                // ==========================
+                // ENVIAR EMAIL
+                // ==========================
+
+                await transporter.sendMail({
+                  from: process.env.EMAIL_USER,
+                  to: email,
+                  subject: "Código de verificación",
+                  html: `
+                    <h2>Hola ${name}</h2>
+
+                    <p>
+                      Tu código de verificación es:
+                    </p>
+
+                    <div style="
+                      font-size:35px;
+                      font-weight:bold;
+                      letter-spacing:8px;
+                      color:#2563eb;
+                      margin:20px 0;
+                    ">
+                      ${codigo}
+                    </div>
+
+                    <p>
+                      Este código expira en 10 minutos.
+                    </p>
+                  `,
+                });
+
+                // ==========================
+                // RESPUESTA
+                // ==========================
+
+                res.status(200).json({
+                  message: "Se envió un código de verificación a tu correo",
+                });
+              },
+            );
+          },
+        );
+      },
+    );
   } catch (error) {
     console.error("Error en registro:", error);
-    res.status(500).send("Error interno del servidor");
+
+    res.status(500).json({
+      message: "Error interno del servidor",
+    });
+  }
+};
+
+// ==========================
+// VERIFY CODE
+// ==========================
+const verifyEmail = async (req, res) => {
+  try {
+    const { email, code } = req.body;
+
+    // ==========================
+    // VALIDAR CAMPOS
+    // ==========================
+
+    if (!email || !code) {
+      return res.status(400).json({
+        message: "Email y código son requeridos",
+      });
+    }
+
+    // ==========================
+    // VERIFICAR CÓDIGO
+    // ==========================
+
+    bd.query(
+      `
+      SELECT * FROM email_codes
+      WHERE email = ?
+      AND code = ?
+      AND expires_at > NOW()
+      `,
+      [email, code],
+      async (err, result) => {
+        if (err) {
+          console.error("Error al verificar código:", err);
+
+          return res.status(500).json({
+            message: "Error interno del servidor",
+          });
+        }
+
+        // ==========================
+        // CÓDIGO INVÁLIDO
+        // ==========================
+
+        if (result.length === 0) {
+          return res.status(400).json({
+            message: "Código inválido o expirado",
+          });
+        }
+
+        // ==========================
+        // DATOS GUARDADOS
+        // ==========================
+
+        const data = result[0];
+
+        const name = data.name;
+        const role = data.role;
+        const hashedPassword = data.password;
+
+        let infoId;
+
+        // ==========================
+        // CREAR CLIENTE
+        // ==========================
+
+        if (role === "cliente") {
+          bd.query(
+            `
+            INSERT INTO client
+            (first_name, ocupation)
+            VALUES (?, ?)
+            `,
+            [name, "pendiente"],
+            (errClient, resultClient) => {
+              if (errClient) {
+                console.error("Error al crear cliente:", errClient);
+
+                return res.status(500).json({
+                  message: "Error al crear información del cliente",
+                });
+              }
+
+              infoId = resultClient.insertId;
+
+              crearUsuario();
+            },
+          );
+        }
+
+        // ==========================
+        // CREAR PRESTAMISTA
+        // ==========================
+        else if (role === "prestamista") {
+          bd.query(
+            `
+            INSERT INTO lender
+            (name, address)
+            VALUES (?, ?)
+            `,
+            [name, email],
+            (errLender, resultLender) => {
+              if (errLender) {
+                console.error("Error al crear prestamista:", errLender);
+
+                return res.status(500).json({
+                  message: "Error al crear información del prestamista",
+                });
+              }
+
+              infoId = resultLender.insertId;
+
+              crearUsuario();
+            },
+          );
+        }
+
+        // ==========================
+        // CREAR USUARIO
+        // ==========================
+
+        function crearUsuario() {
+          bd.query(
+            `
+            INSERT INTO users
+            (
+              information_id,
+              username,
+              email,
+              role,
+              password,
+              verified
+            )
+            VALUES (?, ?, ?, ?, ?, ?)
+            `,
+            [infoId, name, email, role, hashedPassword, 1],
+            (errUser) => {
+              if (errUser) {
+                console.error("Error al crear usuario:", errUser);
+
+                return res.status(500).json({
+                  message: "Error al registrar usuario",
+                });
+              }
+
+              // ==========================
+              // ELIMINAR CÓDIGO USADO
+              // ==========================
+
+              bd.query(
+                "DELETE FROM email_codes WHERE email = ?",
+                [email],
+                (deleteErr) => {
+                  if (deleteErr) {
+                    console.error("Error eliminando código:", deleteErr);
+                  }
+
+                  // ==========================
+                  // RESPUESTA FINAL
+                  // ==========================
+
+                  res.status(201).json({
+                    message: "Cuenta verificada y usuario creado correctamente",
+                  });
+                },
+              );
+            },
+          );
+        }
+      },
+    );
+  } catch (error) {
+    console.error("Error en verifyEmail:", error);
+
+    res.status(500).json({
+      message: "Error interno del servidor",
+    });
   }
 };
 
@@ -275,44 +509,68 @@ const Userdate = async (req, res) => {
 
     if (role === "cliente") {
       // 🔹 Consultar client
-      bd.query("SELECT * FROM client WHERE id = ?", [clid], (err, clientResult) => {
-        if (err) {
-          console.error("Error al obtener cliente:", err);
-          return res.status(500).json({ message: "Error al obtener cliente" });
-        }
-
-        bd.query("SELECT * FROM users WHERE id = ?", [id], (err, userResult) => {
+      bd.query(
+        "SELECT * FROM client WHERE id = ?",
+        [clid],
+        (err, clientResult) => {
           if (err) {
-            console.error("Error al obtener usuario:", err);
-            return res.status(500).json({ message: "Error al obtener usuario" });
+            console.error("Error al obtener cliente:", err);
+            return res
+              .status(500)
+              .json({ message: "Error al obtener cliente" });
           }
 
-          res.status(200).json({
-            client: clientResult[0] || {},
-            user: userResult[0] || {},
-          });
-        });
-      });
+          bd.query(
+            "SELECT * FROM users WHERE id = ?",
+            [id],
+            (err, userResult) => {
+              if (err) {
+                console.error("Error al obtener usuario:", err);
+                return res
+                  .status(500)
+                  .json({ message: "Error al obtener usuario" });
+              }
+
+              res.status(200).json({
+                client: clientResult[0] || {},
+                user: userResult[0] || {},
+              });
+            },
+          );
+        },
+      );
     } else if (role === "prestamista") {
       // 🔹 Consultar lender
-      bd.query("SELECT * FROM lender WHERE id = ?", [clid], (err, lenderResult) => {
-        if (err) {
-          console.error("Error al obtener prestamista:", err);
-          return res.status(500).json({ message: "Error al obtener prestamista" });
-        }
-
-        bd.query("SELECT * FROM users WHERE id = ?", [id], (err, userResult) => {
+      bd.query(
+        "SELECT * FROM lender WHERE id = ?",
+        [clid],
+        (err, lenderResult) => {
           if (err) {
-            console.error("Error al obtener usuario:", err);
-            return res.status(500).json({ message: "Error al obtener usuario" });
+            console.error("Error al obtener prestamista:", err);
+            return res
+              .status(500)
+              .json({ message: "Error al obtener prestamista" });
           }
 
-          res.status(200).json({
-            lender: lenderResult[0] || {},
-            user: userResult[0] || {},
-          });
-        });
-      });
+          bd.query(
+            "SELECT * FROM users WHERE id = ?",
+            [id],
+            (err, userResult) => {
+              if (err) {
+                console.error("Error al obtener usuario:", err);
+                return res
+                  .status(500)
+                  .json({ message: "Error al obtener usuario" });
+              }
+
+              res.status(200).json({
+                lender: lenderResult[0] || {},
+                user: userResult[0] || {},
+              });
+            },
+          );
+        },
+      );
     } else {
       return res.status(400).json({ message: "Rol inválido" });
     }
@@ -321,7 +579,6 @@ const Userdate = async (req, res) => {
     res.status(500).send("Error interno del servidor");
   }
 };
-
 
 const checkClientData = (req, res) => {
   try {
@@ -352,7 +609,7 @@ const checkClientData = (req, res) => {
             c.Estado_civil;
 
           return res.json(!!completo); // ✅ Solo true o false
-        }
+        },
       );
     } else if (role === "prestamista") {
       bd.query(
@@ -369,7 +626,7 @@ const checkClientData = (req, res) => {
           const completo = l.name && l.address && l.phone;
 
           return res.json(!!completo); // ✅ Solo true o false
-        }
+        },
       );
     } else {
       return res.json(false);
@@ -380,8 +637,11 @@ const checkClientData = (req, res) => {
   }
 };
 
-
-
-
-
-module.exports = { login, Register, updateUser, Userdate,checkClientData };
+module.exports = {
+  login,
+  Register,
+  updateUser,
+  Userdate,
+  checkClientData,
+  verifyEmail,
+};

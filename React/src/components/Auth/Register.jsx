@@ -1,128 +1,246 @@
-
 import { useState } from "react";
 import "./Register.css";
-import {  Link, useNavigate } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import axios from "axios";
 import Swal from "sweetalert2";
 
-function parseJwt(token) {
-  if (!token) return null;
-  const base64Url = token.split(".")[1];
-  const base64 = base64Url.replace(/-/g, "+").replace(/_/g, "/");
-  const jsonPayload = decodeURIComponent(
-    window
-      .atob(base64)
-      .split("")
-      .map(function (c) {
-        return "%" + ("00" + c.charCodeAt(0).toString(16)).slice(-2);
-      })
-      .join(""),
-  );
-
-  return JSON.parse(jsonPayload);
-}
-
-function Register({ setUser }) {
-  const [name, setName] = useState('');
-  const [email, setEmail] = useState('');
-  const [role, setRole] = useState('cliente');
-  const [password, setPassword] = useState('');
+function Register() {
+  const [name, setName] = useState("");
+  const [email, setEmail] = useState("");
+  const [role, setRole] = useState("cliente");
+  const [password, setPassword] = useState("");
 
   const navigate = useNavigate();
 
-  const Register = (e) => {
+  // ==========================
+  // REGISTRO
+  // ==========================
+
+  const Register = async (e) => {
     e.preventDefault();
-    axios
-      .post("http://localhost:3001/users/register", {
-        name,
-        email,
-        role,
-        password,
-      })
-      .then((response) => {
-        console.log("Respuesta del servidor:", response.data);
 
-        if (response.data.token) {
-          localStorage.setItem("token", response.data.token);
-          const decoded = parseJwt(response.data.token);
-          if (decoded) {
-            setUser({
-              id: decoded.id,
-              name: decoded.name_user,
-              role: decoded.role,
-              photo: decoded.photo,
-            });
+    try {
+      // ==========================
+      // ENVIAR DATOS AL BACKEND
+      // ==========================
+
+      const response = await axios.post(
+        "http://localhost:3001/users/register",
+        {
+          name,
+          email,
+          role,
+          password,
+        },
+      );
+
+      // ==========================
+      // ALERTA CÓDIGO
+      // ==========================
+
+      const result = await Swal.fire({
+        title: "Verificación requerida",
+
+        input: "text",
+
+        inputLabel:
+          "Introduce el código de 6 dígitos enviado a tu correo",
+
+        inputPlaceholder: "Ej. 123456",
+
+        showCancelButton: true,
+
+        confirmButtonText: "Verificar",
+
+        confirmButtonColor: "#2563eb",
+
+        cancelButtonText: "Cancelar",
+
+        inputValidator: (value) => {
+          if (!value) {
+            return "Debes escribir el código";
           }
-        }
 
-        Swal.fire({
-          title: "Guardado",
-          html: response.data.message || "¡Registro exitoso!",
-          icon: "success",
-          timer: 3000,
-
-        });
-        navigate("/dashboard", { replace: true });
-      })
-      .catch((error) => {
-        console.error("Error al enviar los datos:", error);
-        Swal.fire({
-          icon: "error",
-          title: "Oops...",
-          text: "No se pudo registrar el usuario",
-        });
+          if (value.length !== 6) {
+            return "El código debe tener 6 dígitos";
+          }
+        },
       });
+
+      // ==========================
+      // SI CANCELA
+      // ==========================
+
+      if (!result.isConfirmed) {
+        return;
+      }
+
+      // ==========================
+      // VERIFICAR CÓDIGO
+      // ==========================
+
+      const verifyResponse = await axios.post(
+        "http://localhost:3001/users/verify-email",
+        {
+          email,
+          code: result.value,
+        },
+      );
+
+      // ==========================
+      // ÉXITO
+      // ==========================
+
+      await Swal.fire({
+        icon: "success",
+
+        title: "Cuenta verificada",
+
+        text:
+          verifyResponse.data.message ||
+          "Usuario creado correctamente",
+      });
+
+      // ==========================
+      // LIMPIAR FORMULARIO
+      // ==========================
+
+      setName("");
+      setEmail("");
+      setRole("cliente");
+      setPassword("");
+
+      // ==========================
+      // REDIRECCIÓN
+      // ==========================
+
+      navigate("/login", {
+        replace: true,
+      });
+    } catch (error) {
+      console.error(
+        "Error en registro/verificación:",
+        error,
+      );
+
+      Swal.fire({
+        icon: "error",
+
+        title: "Oops...",
+
+        text:
+          error.response?.data?.message ||
+          "Ocurrió un error",
+      });
+    }
   };
 
-  // datosUsuarios sera lo que se envie al backend para registrar
-  // const datosUsuarios = {
-  //     name,
-  //     email,
-  //     role,
-  //     password
-  // };
-
   return (
-    <>
+    <div className="auth-container">
+      <form
+        className="auth-card"
+        onSubmit={Register}
+      >
+        <h2>Crear Cuenta</h2>
 
-      <div className="auth-container">
-        <form className="auth-card" onSubmit={Register}>
-          <h2>Crear Cuenta</h2>
-          <p className="auth-subtitle">Únete a la red de préstamos más segura</p>
+        <p className="auth-subtitle">
+          Únete a la red de préstamos más segura
+        </p>
 
-          <div className="input-group">
-            <label>Nombre Completo</label>
-            <input type="text" placeholder="Ej. Juan Pérez" value={name} required onChange={e => (setName(e.target.value))} />
-          </div>
+        {/* NOMBRE */}
 
-          <div className="input-group">
-            <label>Correo Electrónico</label>
-            <input type="email" placeholder="correo@ejemplo.com" value={email} required onChange={e => (setEmail(e.target.value))} />
-          </div>
+        <div className="input-group">
+          <label>Nombre Completo</label>
 
-          <div className="input-group">
-            <label>¿Qué deseas hacer?</label>
-            <select value={role} onChange={(e) => setRole(e.target.value)}>
-              <option value="cliente">Solicitar un préstamo (Cliente)</option>
-              <option value="prestamista">Ofrecer préstamos (Prestamista/Banco)</option>
-            </select>
-          </div>
+          <input
+            type="text"
+            placeholder="Ej. Juan Pérez"
+            value={name}
+            required
+            onChange={(e) =>
+              setName(e.target.value)
+            }
+          />
+        </div>
 
-          <div className="input-group">
-            <label>Contraseña</label>
-            <input type="password" placeholder="••••••••" value={password} required onChange={e => setPassword(e.target.value)} />
-          </div>
+        {/* EMAIL */}
 
-          <button type="submit" className="btn-auth">Registrarse</button>
+        <div className="input-group">
+          <label>Correo Electrónico</label>
 
-          <p className="auth-switch">
-            ¿Ya tienes cuenta? <Link to={"/login"}> Inicia Sesión</Link>
-          </p>
-        </form>
-      </div>;
+          <input
+            type="email"
+            placeholder="correo@ejemplo.com"
+            value={email}
+            required
+            onChange={(e) =>
+              setEmail(e.target.value)
+            }
+          />
+        </div>
 
+        {/* ROLE */}
 
-    </>
+        <div className="input-group">
+          <label>
+            ¿Qué deseas hacer?
+          </label>
+
+          <select
+            value={role}
+            onChange={(e) =>
+              setRole(e.target.value)
+            }
+          >
+            <option value="cliente">
+              Solicitar un préstamo
+              (Cliente)
+            </option>
+
+            <option value="prestamista">
+              Ofrecer préstamos
+              (Prestamista/Banco)
+            </option>
+          </select>
+        </div>
+
+        {/* PASSWORD */}
+
+        <div className="input-group">
+          <label>Contraseña</label>
+
+          <input
+            type="password"
+            placeholder="••••••••"
+            value={password}
+            required
+            onChange={(e) =>
+              setPassword(e.target.value)
+            }
+          />
+        </div>
+
+        {/* BOTÓN */}
+
+        <button
+          type="submit"
+          className="btn-auth"
+        >
+          Registrarse
+        </button>
+
+        {/* LOGIN */}
+
+        <p className="auth-switch">
+          ¿Ya tienes cuenta?
+
+          <Link to={"/login"}>
+            {" "}
+            Inicia Sesión
+          </Link>
+        </p>
+      </form>
+    </div>
   );
 }
 
