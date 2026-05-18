@@ -2,14 +2,15 @@ import "./BankDashboard.css";
 import axios from "axios";
 import { useState, useEffect } from "react";
 import { Link } from 'react-router-dom';
+import Swal from "sweetalert2";
 
 function BankDashboard({ user }) {
   const [publications, setPublications] = useState([]);
   const [notifications, setNotifications] = useState([]);
 
+
   const getInformationRequest = async (client_request_id, lender_id, client_id) => {
     try {
-       console.log(lender_id)
       const response = await axios.post(
         `http://localhost:3001/users/getRequestInfo?client_request_id=${client_request_id}&lender_id=${lender_id}&client_id=${client_id}`,
         {
@@ -19,7 +20,13 @@ function BankDashboard({ user }) {
         }
        
       );
-      alert("Solicitud de información enviada al cliente. Espera su respuesta para acceder a los detalles de su solicitud.");
+      Swal.fire({
+                  title: "Aceptado",
+                  html: "¡Solicitud enviada exitosamente!",
+                  icon: "success",
+                  timer: 2000,
+                  showConfirmButton: false,
+                });
     } catch (error) {
       console.error("Error obteniendo información de la solicitud:", error);
     }
@@ -45,7 +52,6 @@ function BankDashboard({ user }) {
         const response = await axios.get(
           `http://localhost:3001/users/sended-notifications?lender_id=${user.id}`
         );
-        console.log(response.data);
         setNotifications(response.data);
       } catch (error) {
         console.error("Error obteniendo notificaciones:", error);
@@ -104,7 +110,18 @@ function BankDashboard({ user }) {
                   {notification.state == 2 ?
                     (<div>
                       <div>
-                        <Link to="/lender-conditions" className='btn-action'>Enviar condiciones </Link>
+                        <Link
+                          to="/lender-conditions"
+                          state={{
+                            lender_id: user.id,
+                            request_id: notification.client_request_id || notification.request_id || notification.id,
+                            notification_id: notification.id
+                          }
+                        }
+                          className='btn-action'
+                        >
+                          Enviar condiciones
+                        </Link>
                       </div>
                     </div>) :
                     (

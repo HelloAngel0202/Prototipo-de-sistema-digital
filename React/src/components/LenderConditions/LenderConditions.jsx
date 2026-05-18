@@ -1,14 +1,21 @@
 import React, { useState } from 'react';
+import { useLocation, useNavigate } from 'react-router-dom';
 import './LenderConditions.css';
 import axios from 'axios';
+import Swal from "sweetalert2";
 
 const LenderConditions = () => {
+    const location = useLocation();
+    const navigate = useNavigate();
+    const { lender_id, request_id, notification_id } = location.state || {};
+    console.log('Datos recibidos en LenderConditions:', { lender_id, request_id, notification_id });
     const [formData, setFormData] = useState({
-        lender_id: 13, // Este valor debería ser dinámico, basado en el usuario autenticado
-        request_id: 11, // Este valor también debería ser dinámico, basado en la solicitud que se está respondiendo
+        lender_id: lender_id || '',
+        request_id: request_id || '',
+        notification_id: notification_id || '',
         approved_amount: '',
         interest: '',
-        interest_type: 'fixed',
+        interest_type: 'fija',
         rate_revision_period: 'anual',
         amortization_system: 'frances',
         fees_count: '',
@@ -36,7 +43,16 @@ const LenderConditions = () => {
         try {
             axios.post('http://localhost:3001/users/lender-conditions', formData)
                 .then(response => {
-                    console.log('Condiciones guardadas:', response.data);
+
+                    Swal.fire({
+                        title: "Aceptado",
+                        html: "¡Oferta enviada exitosamente!",
+                        icon: "success",
+                        timer: 2000,
+                        showConfirmButton: false,
+                    });
+
+                    navigate('/dashboard');
                 })
                 .catch(error => {
                     console.error('Error al guardar condiciones:', error);

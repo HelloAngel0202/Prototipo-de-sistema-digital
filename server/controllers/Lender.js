@@ -2,10 +2,10 @@ const { request } = require("express");
 const db = require("../bd");
 
 const createLenderConditions = async (req, res) => {
-  const { request_id, lender_id, approved_amount, interest, interest_type,rate_revision_period, amortization_system, fees_count, estimated_fee_amount, closing_costs, late_fee_percentage, message, expiration_date } = req.body;
-  console.log("Datos recibidos para crear condiciones del prestamista:", req.body);
+  const { request_id, lender_id, approved_amount, interest, interest_type,rate_revision_period, amortization_system, fees_count, estimated_fee_amount, closing_costs, late_fee_percentage, message, expiration_date, notification_id } = req.body;
+  console.log('Datos recibidos para crear condiciones del prestamista:', req.body);
   try {
-    if (!request_id  || !lender_id || !approved_amount || !interest || !interest_type || !rate_revision_period || !amortization_system || !fees_count || !estimated_fee_amount || !closing_costs || !late_fee_percentage || !message || !expiration_date) {
+    if (!request_id  || !lender_id || !approved_amount || !interest || !interest_type || !rate_revision_period || !amortization_system || !fees_count || !estimated_fee_amount || !closing_costs || !late_fee_percentage || !message || !expiration_date || !notification_id) {
       return res.status(400).json({ message: "Todos los campos son requeridos" });
     }
     db.query(
@@ -16,7 +16,19 @@ const createLenderConditions = async (req, res) => {
           console.error("Error al crear condiciones del prestamista:", err);
           return res.status(500).json({ message: "Error al crear condiciones del prestamista" });
         }
-        res.status(201).json({ message: "Condiciones del prestamista creadas exitosamente", id: result.insertId });
+
+        db.query(
+          "UPDATE notifications SET state = 3 WHERE id = ?",
+          [notification_id],
+          (updateErr) => {
+            if (updateErr) {
+              console.error("Error al actualizar el estado de notifications:", updateErr);
+              return res.status(500).json({ message: "Error al actualizar el estado de la notificación" });
+            }
+
+            res.status(201).json({ message: "Condiciones del prestamista creadas exitosamente", id: result.insertId });
+          }
+        );
       }
     );
   } catch (error) {
