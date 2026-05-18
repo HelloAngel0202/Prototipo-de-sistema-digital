@@ -163,28 +163,106 @@ const Register = async (req, res) => {
                   to: email,
                   subject: "Código de verificación",
                   html: `
-                    <h2>Hola ${name}</h2>
+    <div style="
+      background:#f4f7fb;
+      padding:40px 20px;
+      font-family:Arial, sans-serif;
+    ">
+      
+      <div style="
+        max-width:500px;
+        margin:auto;
+        background:white;
+        border-radius:16px;
+        overflow:hidden;
+        box-shadow:0 10px 25px rgba(0,0,0,0.1);
+      ">
 
-                    <p>
-                      Tu código de verificación es:
-                    </p>
+        <div style="
+          background:linear-gradient(135deg,#2563eb,#1e40af);
+          padding:30px;
+          text-align:center;
+          color:white;
+        ">
+          <h1 style="margin:0;font-size:28px;">
+            Verificación
+          </h1>
 
-                    <div style="
-                      font-size:35px;
-                      font-weight:bold;
-                      letter-spacing:8px;
-                      color:#2563eb;
-                      margin:20px 0;
-                    ">
-                      ${codigo}
-                    </div>
+          <p style="
+            margin-top:10px;
+            opacity:0.9;
+            font-size:15px;
+          ">
+            Seguridad de tu cuenta
+          </p>
+        </div>
 
-                    <p>
-                      Este código expira en 10 minutos.
-                    </p>
-                  `,
+        <div style="padding:40px 30px;color:#333;">
+          
+          <h2 style="
+            margin-top:0;
+            font-size:24px;
+          ">
+            Hola ${name} 👋
+          </h2>
+
+          <p style="
+            font-size:16px;
+            line-height:1.6;
+            color:#555;
+          ">
+            Usa el siguiente código para verificar tu cuenta:
+          </p>
+
+          <div style="
+            margin:35px 0;
+            text-align:center;
+          ">
+            <span style="
+              display:inline-block;
+              background:#eff6ff;
+              color:#2563eb;
+              font-size:40px;
+              font-weight:bold;
+              letter-spacing:10px;
+              padding:18px 30px;
+              border-radius:12px;
+              border:2px dashed #2563eb;
+            ">
+              ${codigo}
+            </span>
+          </div>
+
+          <p style="
+            font-size:14px;
+            color:#777;
+            line-height:1.6;
+          ">
+            Este código expirará en <b>10 minutos</b>.
+          </p>
+
+          <p style="
+            font-size:14px;
+            color:#777;
+            margin-top:25px;
+          ">
+            Si no solicitaste este código, puedes ignorar este correo.
+          </p>
+        </div>
+
+        <div style="
+          background:#f9fafb;
+          padding:20px;
+          text-align:center;
+          font-size:13px;
+          color:#999;
+        ">
+          © 2026 Tu Aplicación
+        </div>
+      </div>
+    </div>
+  `,
                 });
-
                 // ==========================
                 // RESPUESTA
                 // ==========================
