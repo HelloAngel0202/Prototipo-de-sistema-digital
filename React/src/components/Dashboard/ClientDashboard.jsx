@@ -10,6 +10,7 @@ function ClientDashboard({ user }) {
   const [notifications, setNotifications] = useState([]);
   const [lenderInfo, setLenderInfo] = useState({});
   const [loading, setLoading] = useState(true);
+  const [prestamos, setPrestamos] = useState([]);
 
   const acceptOffer = (offer) => {
     try {
@@ -71,13 +72,29 @@ function ClientDashboard({ user }) {
         const response = await axios.get(
           `http://localhost:3001/users/notifications?client_id=${user.id}`
         );
-        console.log('Notificaciones obtenidas:', response.data);
         setNotifications(response.data);
       } catch (error) {
         console.error('Error obteniendo notificaciones:', error);
       }
     };
+    const obtenerPrestamos = async () => {
+      if (!user?.id) {
+        setLoading(false);
+        return;
+      }
+      try {
+        const response = await axios.get(
+          `http://localhost:3001/users/my-loans?user_id=${user.id}`
+        );
+        console.log('Préstamos obtenidos:', response.data);
+        setPrestamos(response.data);
+      } catch (error) {
+        console.error('Error obteniendo préstamos:', error);
+      }
 
+    }
+
+    obtenerPrestamos();
     obtenerNotificaciones();
     obtenerPublicaciones();
 
@@ -220,6 +237,29 @@ function ClientDashboard({ user }) {
                 <span className="type-tag">{notificacion.tipo}</span>
                 <button className="btn-accept" onClick={() => acceptOffer(notificacion)}>
                   Permitir acceso a mi información
+                </button>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      <div className="offers-container">
+        <h3>Préstamos</h3>
+        <p className="offers-subtitle">Aquí se mostrarán los préstamos activos y pendientes</p>
+
+        <div className="offers-grid">
+          {prestamos.map(prestamo => (
+            <div key={prestamo.id} className="offer-card">
+              <div className="offer-header">
+                <span className="bank-badge">{prestamo.bank_name}</span>
+                <span className="rating">5⭐ {prestamo.puntos}</span>
+              </div>
+
+              <div className="offer-footer">
+                <span className="type-tag">{prestamo.tipo}</span>
+                <button className="btn-accept" onClick={() => acceptOffer(prestamo)}>
+                  Ver condiciones del préstamo
                 </button>
               </div>
             </div>

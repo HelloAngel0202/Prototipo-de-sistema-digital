@@ -23,6 +23,7 @@ router.get("/lender-info", Lender.getLenderInfo);
 router.get("/accept-offer", borrower.acceptOffer);
 router.get("/sended-notifications", borrower.sendedNotifications);
 router.post("/lender-conditions", Lender.createLenderConditions);
+router.get("/my-loans", borrower.myLoans);
 
 
 
