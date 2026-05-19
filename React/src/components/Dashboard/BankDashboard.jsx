@@ -115,7 +115,8 @@ function BankDashboard({ user }) {
                           state={{
                             lender_id: user.id,
                             request_id: notification.client_request_id || notification.request_id || notification.id,
-                            notification_id: notification.id
+                            notification_id: notification.id,
+                            notification_client_id: notification.client_id
                           }
                         }
                           className='btn-action'

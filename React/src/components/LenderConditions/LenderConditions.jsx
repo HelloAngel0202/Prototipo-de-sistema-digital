@@ -7,12 +7,10 @@ import Swal from "sweetalert2";
 const LenderConditions = () => {
     const location = useLocation();
     const navigate = useNavigate();
-    const { lender_id, request_id, notification_id } = location.state || {};
-    console.log('Datos recibidos en LenderConditions:', { lender_id, request_id, notification_id });
+    const { lender_id, request_id, notification_id, notification_client_id } = location.state || {};
     const [formData, setFormData] = useState({
         lender_id: lender_id || '',
         request_id: request_id || '',
-        notification_id: notification_id || '',
         approved_amount: '',
         interest: '',
         interest_type: 'fija',
@@ -24,7 +22,8 @@ const LenderConditions = () => {
         late_fee_percentage: '',
         message: '',
         expiration_date: '',
-        state: 'pending',
+        notification_id: notification_id || '',
+        notification_client_id: notification_client_id || '',
         created_at: new Date(),
         updated_at: new Date(),
     });
@@ -39,7 +38,6 @@ const LenderConditions = () => {
 
     const handleSubmit = (e) => {
         e.preventDefault();
-        console.log('Form Data:', formData);
         try {
             axios.post('http://localhost:3001/users/lender-conditions', formData)
                 .then(response => {

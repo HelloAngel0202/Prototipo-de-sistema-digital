@@ -2,10 +2,10 @@ const { request } = require("express");
 const db = require("../bd");
 
 const createLenderConditions = async (req, res) => {
-  const { request_id, lender_id, approved_amount, interest, interest_type,rate_revision_period, amortization_system, fees_count, estimated_fee_amount, closing_costs, late_fee_percentage, message, expiration_date, notification_id } = req.body;
-  console.log('Datos recibidos para crear condiciones del prestamista:', req.body);
+  const { request_id, lender_id, approved_amount, interest, interest_type, rate_revision_period, amortization_system, fees_count, estimated_fee_amount, closing_costs, late_fee_percentage, message, expiration_date, notification_id, notification_client_id } = req.body;
+  console.log('Datos recibidos en createLenderConditions:', { request_id, lender_id, approved_amount, interest, interest_type, rate_revision_period, amortization_system, fees_count, estimated_fee_amount, closing_costs, late_fee_percentage, message, expiration_date, notification_id, notification_client_id });
   try {
-    if (!request_id  || !lender_id || !approved_amount || !interest || !interest_type || !rate_revision_period || !amortization_system || !fees_count || !estimated_fee_amount || !closing_costs || !late_fee_percentage || !message || !expiration_date || !notification_id) {
+    if (!request_id || !lender_id || !approved_amount || !interest || !interest_type || !rate_revision_period || !amortization_system || !fees_count || !estimated_fee_amount || !closing_costs || !late_fee_percentage || !message || !expiration_date || !notification_id || !notification_client_id) {
       return res.status(400).json({ message: "Todos los campos son requeridos" });
     }
     db.query(
@@ -26,6 +26,12 @@ const createLenderConditions = async (req, res) => {
               return res.status(500).json({ message: "Error al actualizar el estado de la notificación" });
             }
 
+            db.query("INSERT INTO lender_response (user_id, lender_conditions_id, state, created_at, updated_at) VALUES (?, ?, ?, ?, ?)", [notification_client_id, result.insertId, 1, new Date(), new Date()], (responseErr) => {
+              if (responseErr) {
+                console.error("Error al crear lender_response:", responseErr);
+                return res.status(500).json({ message: "Error al crear la respuesta del prestamista" });
+              }
+            });
             res.status(201).json({ message: "Condiciones del prestamista creadas exitosamente", id: result.insertId });
           }
         );
