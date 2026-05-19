@@ -16,8 +16,25 @@ function Register() {
   // REGISTRO
   // ==========================
 
+
+  const validatePassword = (password) => {
+  // Al menos 8 caracteres, una mayúscula, una minúscula, un número y un símbolo
+  const regex =
+    /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/;
+  return regex.test(password);
+};
+
   const Register = async (e) => {
     e.preventDefault();
+
+    if (!validatePassword(password)) {
+    Swal.fire({
+      icon: "warning",
+      title: "Contraseña inválida",
+      text: "Debe tener mínimo 8 caracteres, incluir mayúscula, minúscula, número y símbolo.",
+    });
+    return;
+  }
 
     try {
       // ==========================

@@ -64,9 +64,7 @@ const Register = async (req, res) => {
   try {
     const { name, email, role, password } = req.body;
 
-    // ==========================
     // VALIDAR CAMPOS
-    // ==========================
 
     if (!name || !email || !role || !password) {
       return res.status(400).json({
@@ -74,9 +72,19 @@ const Register = async (req, res) => {
       });
     }
 
-    // ==========================
+    // VALIDAR Contraseña
+
+    const passwordRegex =
+      /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/;
+
+    if (!passwordRegex.test(password)) {
+      return res.status(400).json({
+        message:
+          "La contraseña debe tener mínimo 8 caracteres, incluir mayúscula, minúscula, número y símbolo",
+      });
+    }
+
     // VALIDAR ROL
-    // ==========================
 
     if (role !== "cliente" && role !== "prestamista") {
       return res.status(400).json({
@@ -84,9 +92,7 @@ const Register = async (req, res) => {
       });
     }
 
-    // ==========================
     // VERIFICAR SI EL EMAIL YA EXISTE
-    // ==========================
 
     bd.query(
       "SELECT id FROM users WHERE email = ?",
@@ -106,21 +112,15 @@ const Register = async (req, res) => {
           });
         }
 
-        // ==========================
         // HASH PASSWORD
-        // ==========================
 
         const hashedPassword = await bcrypt.hash(password, 10);
 
-        // ==========================
         // GENERAR CÓDIGO
-        // ==========================
 
         const codigo = Math.floor(100000 + Math.random() * 900000).toString();
 
-        // ==========================
         // ELIMINAR CÓDIGOS ANTERIORES
-        // ==========================
 
         bd.query(
           "DELETE FROM email_codes WHERE email = ?",
@@ -134,9 +134,7 @@ const Register = async (req, res) => {
               });
             }
 
-            // ==========================
             // GUARDAR DATOS TEMPORALES
-            // ==========================
 
             bd.query(
               `
@@ -154,9 +152,7 @@ const Register = async (req, res) => {
                   });
                 }
 
-                // ==========================
                 // ENVIAR EMAIL
-                // ==========================
 
                 await transporter.sendMail({
                   from: process.env.EMAIL_USER,
@@ -263,9 +259,8 @@ const Register = async (req, res) => {
     </div>
   `,
                 });
-                // ==========================
+
                 // RESPUESTA
-                // ==========================
 
                 res.status(200).json({
                   message: "Se envió un código de verificación a tu correo",
@@ -285,16 +280,13 @@ const Register = async (req, res) => {
   }
 };
 
-// ==========================
 // VERIFY CODE
-// ==========================
+
 const verifyEmail = async (req, res) => {
   try {
     const { email, code } = req.body;
 
-    // ==========================
     // VALIDAR CAMPOS
-    // ==========================
 
     if (!email || !code) {
       return res.status(400).json({
@@ -302,9 +294,7 @@ const verifyEmail = async (req, res) => {
       });
     }
 
-    // ==========================
     // VERIFICAR CÓDIGO
-    // ==========================
 
     bd.query(
       `
@@ -323,9 +313,7 @@ const verifyEmail = async (req, res) => {
           });
         }
 
-        // ==========================
         // CÓDIGO INVÁLIDO
-        // ==========================
 
         if (result.length === 0) {
           return res.status(400).json({
@@ -333,9 +321,7 @@ const verifyEmail = async (req, res) => {
           });
         }
 
-        // ==========================
         // DATOS GUARDADOS
-        // ==========================
 
         const data = result[0];
 
@@ -345,9 +331,7 @@ const verifyEmail = async (req, res) => {
 
         let infoId;
 
-        // ==========================
         // CREAR CLIENTE
-        // ==========================
 
         if (role === "cliente") {
           bd.query(
@@ -373,9 +357,7 @@ const verifyEmail = async (req, res) => {
           );
         }
 
-        // ==========================
         // CREAR PRESTAMISTA
-        // ==========================
         else if (role === "prestamista") {
           bd.query(
             `
@@ -400,9 +382,7 @@ const verifyEmail = async (req, res) => {
           );
         }
 
-        // ==========================
         // CREAR USUARIO
-        // ==========================
 
         function crearUsuario() {
           bd.query(
@@ -428,9 +408,7 @@ const verifyEmail = async (req, res) => {
                 });
               }
 
-              // ==========================
               // ELIMINAR CÓDIGO USADO
-              // ==========================
 
               bd.query(
                 "DELETE FROM email_codes WHERE email = ?",
@@ -440,9 +418,7 @@ const verifyEmail = async (req, res) => {
                     console.error("Error eliminando código:", deleteErr);
                   }
 
-                  // ==========================
                   // RESPUESTA FINAL
-                  // ==========================
 
                   res.status(201).json({
                     message: "Cuenta verificada y usuario creado correctamente",
@@ -482,6 +458,10 @@ const updateUser = async (req, res) => {
       occupation,
       username,
       second_phone,
+      documento,
+      representante,
+      nacionalidad,
+      sexo,
     } = req.body;
 
     if (role === "cliente") {
@@ -538,9 +518,28 @@ const updateUser = async (req, res) => {
     } else if (role === "prestamista") {
       bd.query(
         `UPDATE lender 
-         SET name = ?, address = ?, phone = ?, second_phone = ?
-         WHERE id = ?`,
-        [username, address, phone, second_phone, clid],
+   SET name = ?, 
+       address = ?, 
+       phone = ?, 
+       second_phone = ?, 
+       documento = ?, 
+       representante = ?, 
+       nacionalidad = ?, 
+       estado_civil = ?, 
+       sexo = ?
+   WHERE id = ?`,
+        [
+          username,
+          address,
+          phone,
+          second_phone,
+          documento,
+          representante,
+          nacionalidad,
+          Estado_civil,
+          sexo,
+          clid,
+        ],
         (err, resultLender) => {
           if (err) {
             console.error("Error al actualizar prestamista:", err);
