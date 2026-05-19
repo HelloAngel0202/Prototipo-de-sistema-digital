@@ -8,6 +8,7 @@ const createLenderConditions = async (req, res) => {
     if (!request_id || !lender_id || !approved_amount || !interest || !interest_type || !rate_revision_period || !amortization_system || !payment_frequency || !fees_count || !estimated_fee_amount || !closing_costs || !late_fee_percentage || !message || !expiration_date || !notification_id || !notification_client_id || !pay_days) {
       return res.status(400).json({ message: "Todos los campos son requeridos" });
     }
+    console.log("Datos recibidos para crear condiciones del prestamista:", req.body);
     db.query(
       "INSERT INTO lender_conditions (request_id, lender_id, approved_amount, interest, interest_type, rate_revision_period, amortization_system, payment_frequency,fees_count, estimated_fee_amount, closing_costs, late_fee_percentage, message, pay_days, expiration_date, state, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
       [request_id, lender_id, approved_amount, interest, interest_type, rate_revision_period, amortization_system, payment_frequency, fees_count, estimated_fee_amount, closing_costs, late_fee_percentage, message, pay_days, expiration_date, 'pending', new Date(), new Date()],
@@ -43,6 +44,36 @@ const createLenderConditions = async (req, res) => {
   }
 };
 
+const showLenderConditions = async (req, res) => {
+  const { lender_conditions_id } = req.query;
+
+  try {
+    if (!lender_conditions_id) {
+      return res.status(400).json({ message: "El ID de las condiciones del prestamista es requerido" });
+    }
+
+    db.query(
+      "SELECT * FROM lender_conditions WHERE id = ?",
+      [lender_conditions_id],
+      (err, result) => {
+        if (err) {
+          console.error("Error al consultar condiciones del prestamista:", err);
+          return res.status(500).json({ message: "Error al obtener condiciones del prestamista" });
+        }
+
+        if (result.length === 0) {
+          return res.status(404).json({ message: "Condiciones del prestamista no encontradas" });
+        }
+
+        res.status(200).json(result[0]);
+      }
+    );
+  } catch (error) {
+    console.error("Error en obtener condiciones del prestamista:", error);
+    res.status(500).send("Error interno del servidor");
+  }
+};
+
 const publications = async (req, res) => {
   try {
     const { user_id, amount, reason } = req.body;
@@ -54,7 +85,7 @@ const publications = async (req, res) => {
     // Insertar publicación
     db.query(
       "INSERT INTO client_request (user_id, amount, reason, created_at, state) VALUES (?, ?, ?, ?, ?)",
-      [user_id, amount, reason, new Date(), "pendiente"],
+      [user_id, amount, reason, new Date(), 1],
       (err, result) => {
         if (err) {
           console.error("Error al crear publicación:", err);
@@ -148,4 +179,5 @@ module.exports = {
   createLenderConditions,
   getRequestInfo,
   getLenderInfo,
+  showLenderConditions
 };

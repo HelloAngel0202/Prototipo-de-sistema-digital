@@ -183,21 +183,6 @@ function ClientDashboard({ user }) {
         </div>
       </section>
 
-      {/* Lista de Préstamos Activos (Simulada) */}
-      <section className="active-loans">
-        <h3>Tus Préstamos Activos</h3>
-        <div className="loan-item">
-          <div className="loan-header">
-            <span className="bank-name">Banco Verificado A</span>
-            <span className="status-badge approved">En curso</span>
-          </div>
-          <div className="loan-details">
-            <p>Monto original: <strong>RD$ 30,000</strong></p>
-            <p>Cuotas restantes: <strong>4 de 12</strong></p>
-          </div>
-        </div>
-      </section>
-
       <section className="user-publications">
         <h3>Tus solicitudes publicadas</h3>
         {loading ? (
@@ -211,7 +196,7 @@ function ClientDashboard({ user }) {
                 <span className="amount-tag">
                   RD$ {Number(solicitud.amount).toLocaleString()}
                 </span>
-                <span className={`status-badge ${solicitud.state}`}>{solicitud.state}</span>
+                <span className={`status-badge ${solicitud.state}`}>{solicitud.state == 1 ? "Pendiente" : "Aceptada"}</span>
               </div>
               <p>{solicitud.reason}</p>
               <p className="publication-meta">
@@ -258,9 +243,15 @@ function ClientDashboard({ user }) {
 
               <div className="offer-footer">
                 <span className="type-tag">{prestamo.tipo}</span>
-                <button className="btn-accept" onClick={() => acceptOffer(prestamo)}>
+                <Link
+                  to="/show-lender-conditions"
+                  state={{
+                    lender_conditions_id: prestamo.lender_conditions_id
+                  }}
+                  className='btn-action'
+                >
                   Ver condiciones del préstamo
-                </button>
+                </Link> 
               </div>
             </div>
           ))}

@@ -107,7 +107,7 @@ const acceptOffer = async (req, res) => {
 
       res.status(200).json({ message: "Oferta aceptada y notificaciones actualizadas exitosamente" });
     });
-    const updateRequestQuery = "UPDATE client_request SET state = 'accepted' WHERE id = ?";
+    const updateRequestQuery = "UPDATE client_request SET state = 2 WHERE id = ?";
     db.query(updateRequestQuery, [clientRequestId], (err, results) => {
       if (err) {
         console.error("Error al aceptar la oferta:", err);

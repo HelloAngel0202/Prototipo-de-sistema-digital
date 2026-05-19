@@ -129,8 +129,7 @@ const LenderConditions = () => {
                             onChange={handleChange}
                         >
                             <option value="frances">Frances</option>
-                            <option value="alemann">Alemán</option>
-                            <option value="americano">Americano</option>
+                            <option value="aleman">Alemán</option>
                         </select>
                     </label>
                     <label className="field-label">
@@ -142,8 +141,8 @@ const LenderConditions = () => {
                             onChange={handleChange}
                         >
                             <option value="mensual">semanal</option>
-                            <option value="trimestral">quincenal</option>
-                            <option value="semestral">mensual</option>
+                            <option value="quincenal">quincenal</option>
+                            <option value="semanal">mensual</option>
                         </select>
                     </label>
 
