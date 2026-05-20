@@ -23,6 +23,24 @@ function LoanRequestForm() {
   const [amount, setAmount] = useState("");
   const [reason, setReason] = useState("");
  
+  const handleAmountChange = (e) => {
+    const inputValue = e.target.value;
+
+    // 1. Remover todo lo que NO sea un número (para limpiar comas anteriores)
+    const cleanNumber = inputValue.replace(/\D/g, "");
+
+    // Si el campo se queda vacío, limpiamos el estado
+    if (!cleanNumber) {
+      setAmount("");
+      return;
+    }
+
+    // 2. Formatear el número limpio con comas de miles
+    const formattedNumber = new Intl.NumberFormat("es-DO").format(cleanNumber);
+
+    // 3. Guardar el string formateado en el estado
+    setAmount(formattedNumber);
+  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -67,10 +85,9 @@ function LoanRequestForm() {
         return;
       }
 
-      // ✅ Si los datos están completos, crear publicación
       const requestData = {
         user_id: payload.id,
-        amount,
+        amount : Number(amount.replace(/\D/g, "")),
         reason,
         state: "pendiente",
       };
@@ -87,6 +104,7 @@ function LoanRequestForm() {
         icon: "success",
         timer: 3000,
       });
+
       navigate("/dashboard", { replace: true });
     } catch (error) {
       console.error("Error al publicar solicitud:", error);
@@ -110,10 +128,10 @@ function LoanRequestForm() {
         <div className="input-group">
           <label>Monto que necesitas (RD$)</label>
           <input
-            type="number"
+            type="text"
             placeholder="Ej. 50000"
             value={amount}
-            onChange={(e) => setAmount(e.target.value)}
+            onChange={handleAmountChange}
             required
           />
         </div>

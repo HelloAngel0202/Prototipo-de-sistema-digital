@@ -89,7 +89,7 @@ function Navbar({ user, setUser }) {
 
                 <Link
                   to="/notifications"
-                  onClick={() => setMenuOpen(false)}
+                  onClick={() => navigate('/dashboard')}
                 >
                   Notificaciones
                 </Link>

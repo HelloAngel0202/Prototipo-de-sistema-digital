@@ -101,9 +101,7 @@ function BankDashboard({ user }) {
                 </span>
                 <p>{solicitud.reason}</p>
                 <p>
-                  {/* Ya no necesitas evaluar el 'pendiente' aquí, porque el filtro 
-              de arriba ya borró la tarjeta por completo del muro.
-            */}
+                  
                   <button onClick={() => { getInformationRequest(solicitud.id, user.id, solicitud.user_id) }}>
                     Solicitar información
                   </button>

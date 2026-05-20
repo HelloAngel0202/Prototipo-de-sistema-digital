@@ -3,6 +3,7 @@ const db = require("../bd");
 
 const createLenderConditions = async (req, res) => {
   const { request_id, lender_id, approved_amount, interest, interest_type, rate_revision_period, amortization_system, payment_frequency, fees_count, estimated_fee_amount, closing_costs, late_fee_percentage, message, expiration_date, notification_id, notification_client_id, pay_days } = req.body;
+  console.log("Datos recibidos para crear condiciones del prestamista:", req.body);
   let lenderCondition = '';
   try {
     if (!request_id || !lender_id || !approved_amount || !interest || !interest_type || !rate_revision_period || !amortization_system || !payment_frequency || !fees_count || !estimated_fee_amount || !closing_costs || !late_fee_percentage || !message || !expiration_date || !notification_id || !notification_client_id || !pay_days) {
@@ -40,6 +41,36 @@ const createLenderConditions = async (req, res) => {
     );
   } catch (error) {
     console.error("Error en crear condiciones del prestamista:", error);
+    res.status(500).send("Error interno del servidor");
+  }
+};
+
+const getClientRequest = async (req, res) => {
+  const { request_id } = req.query;
+
+  try {
+    if (!request_id) {
+      return res.status(400).json({ message: "El ID de la solicitud del cliente es requerido" });
+    }
+
+    db.query(
+      "SELECT * FROM client_request WHERE id = ?",
+      [request_id],
+      (err, result) => {
+        if (err) {
+          console.error("Error al consultar la solicitud del cliente:", err);
+          return res.status(500).json({ message: "Error al obtener la solicitud del cliente" });
+        }
+
+        if (result.length === 0) {
+          return res.status(404).json({ message: "Solicitud del cliente no encontrada" });
+        }
+
+        res.status(200).json(result[0]);
+      }
+    );
+  } catch (error) {
+    console.error("Error en obtener la solicitud del cliente:", error);
     res.status(500).send("Error interno del servidor");
   }
 };
@@ -179,5 +210,6 @@ module.exports = {
   createLenderConditions,
   getRequestInfo,
   getLenderInfo,
-  showLenderConditions
+  showLenderConditions,
+  getClientRequest
 };

@@ -86,7 +86,29 @@ const myLoans = async (req, res) => {
     res.status(500).send("Error interno del servidor");
   }
 };
+const acceptAccess = async (req, res) => {
+  try {
+    const { offerId, clientRequestId } = req.query;
 
+    const updateNotificationsQuery = "UPDATE notifications SET state = 2 WHERE id = ?";
+    db.query(updateNotificationsQuery, [offerId], (err2, results2) => {
+      if (err2) {
+        console.error("Error al actualizar notificaciones:", err2);
+        return res.status(500).json({ message: "Error al actualizar notificaciones" });
+      }
+
+      if (results2.affectedRows === 0) {
+        console.warn("No se encontraron notificaciones para actualizar");
+      }
+
+      res.status(200).json({ message: "Oferta aceptada y notificaciones actualizadas exitosamente" });
+    });
+
+  } catch (error) {
+    console.error("Error interno:", error);
+    res.status(500).send("Error interno del servidor");
+  }
+};
 const acceptOffer = async (req, res) => {
   try {
     const { offerId, clientRequestId, lender_user_id, client_user_id } = req.query;
@@ -134,6 +156,7 @@ const acceptOffer = async (req, res) => {
   };
 }
 module.exports = {
+  acceptAccess,
   publications,
   notifications,
   acceptOffer,

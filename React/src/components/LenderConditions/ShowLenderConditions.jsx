@@ -61,7 +61,7 @@ const ShowLenderConditions = () => {
                     <p><strong>Interés:</strong> {lenderConditions.interest} %</p>
                     <p><strong>Tipo de Interés:</strong> {lenderConditions.interest_type}</p>
                     <p><strong>Periodo de Revisión de Tasa:</strong> {lenderConditions.rate_revision_period}</p>
-                    <p><button onClick={() => acceptOffer(lenderConditions)}>Aceptar Oferta</button></p>
+                    <p><button onClick={() => navigate('/dashboard')}>Volver al dashboard</button></p>
                 </div>
             ) : (
                 <p>Condiciones no encontradas.</p>

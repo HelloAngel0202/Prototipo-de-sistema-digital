@@ -12,12 +12,12 @@ function ClientDashboard({ user }) {
   const [loading, setLoading] = useState(true);
   const [prestamos, setPrestamos] = useState([]);
 
-  const acceptOffer = (offer) => {
+  const acceptAccess = (offer) => {
     try {
-      axios.get(`http://localhost:3001/users/accept-offer?offerId=${offer.id}&clientRequestId=${offer.client_request_id}`)
+      axios.get(`http://localhost:3001/users/accept-access?offerId=${offer.id}&clientRequestId=${offer.client_request_id}`)
         .then(response => {
           setNotifications(prev => prev.filter(notificacion => notificacion.id !== offer.id));
-
+          console.log(notifications);
           Swal.fire({
             title: "Aceptado",
             html: "¡Oferta aceptada exitosamente!",
@@ -132,47 +132,17 @@ function ClientDashboard({ user }) {
     fetchLenders();
   }, [notifications]);
 
-  // Datos simulados hasta que se conecte con el backend de angel 
-  const stats = {
-    valoracion: 4.8,
-    prestamosActivos: 1,
-    proximoPago: "15 de Mayo, 2026",
-    montoPendiente: "12,500.00"
-  };
+
 
   return (
     <div className="dashboard-container">
       <header className="dashboard-header">
-        <h1>Panel de Controls</h1>
+        <h1>Panel de Control</h1>
         <p>Bienvenido de nuevo, <strong>{user.name}</strong></p>
       </header>
 
       {/* Sección de Tarjetas de Resumen */}
-      <section className="stats-grid">
-        <div className="stat-card">
-          <span className="stat-icon">⭐</span>
-          <div className="stat-info">
-            <h3>Tu Valoración</h3>
-            <p className="stat-value">{stats.valoracion} / 5.0</p>
-          </div>
-        </div>
 
-        <div className="stat-card">
-          <span className="stat-icon">📅</span>
-          <div className="stat-info">
-            <h3>Próximo Pago</h3>
-            <p className="stat-value">{stats.proximoPago}</p>
-          </div>
-        </div>
-
-        <div className="stat-card">
-          <span className="stat-icon">💰</span>
-          <div className="stat-info">
-            <h3>Deuda Actual</h3>
-            <p className="stat-value">RD$ {stats.montoPendiente}</p>
-          </div>
-        </div>
-      </section>
 
       {/* Sección de Acciones Principales */}
       <section className="main-actions">
@@ -188,10 +158,14 @@ function ClientDashboard({ user }) {
         {loading ? (
           <p>Cargando tus solicitudes...</p>
         ) : publications.length === 0 ? (
-          <p>No has publicado ninguna solicitud aún.</p>
+          <div className="publication-card">
+            <p>No has publicado ninguna solicitud aún.</p>
+          </div>
         ) : (
           publications.map((solicitud) => (
-            <div key={solicitud.id} className="publication-card">
+            <div className="">
+              {solicitud.state === 1 ? (
+                <div key={solicitud.id} className="publication-card">
               <div className="publication-header">
                 <span className="amount-tag">
                   RD$ {Number(solicitud.amount).toLocaleString()}
@@ -202,6 +176,10 @@ function ClientDashboard({ user }) {
               <p className="publication-meta">
                 Publicada el {new Date(solicitud.created_at).toLocaleDateString('es-DO')}
               </p>
+            </div> 
+              ) : (
+                <div className=""></div>
+              )}
             </div>
           ))
         )}
@@ -211,21 +189,28 @@ function ClientDashboard({ user }) {
         <p className="offers-subtitle">Compara las condiciones y elige la que prefieras</p>
 
         <div className="offers-grid">
-          {notifications.map(notificacion => (
-            <div key={notificacion.id} className="offer-card">
-              <div className="offer-header">
-                <span className="bank-badge">{lenderInfo[notificacion.lender_id]?.name || 'Nombre no disponible'}</span>
-                <span className="rating">5⭐ {notificacion.puntos}</span>
-              </div>
-
-              <div className="offer-footer">
-                <span className="type-tag">{notificacion.tipo}</span>
-                <button className="btn-accept" onClick={() => acceptOffer(notificacion)}>
-                  Permitir acceso a mi información
-                </button>
-              </div>
+          {notifications.length === 0 ? (
+            <div className="offer-card">
+              <p>No has recibido ofertas aún. Publica una solicitud para empezar a recibir propuestas de los bancos.</p>
             </div>
-          ))}
+          ) : (
+            notifications.map(notificacion => (
+              <div key={notificacion.id} className="offer-card">
+                <div className="offer-header">
+                  <span className="bank-badge">{lenderInfo[notificacion.lender_id]?.name + " quiere acceder a tu información" || 'Nombre no disponible'}</span>
+                  <span className="rating">5⭐ {notificacion.puntos}</span>
+                </div>
+
+                <div className="offer-footer">
+                  <span className="type-tag">{notificacion.tipo}</span>
+                  <button className="btn-accept" onClick={() => acceptAccess(notificacion)}>
+                    Permitir acceso a mi información
+                  </button>
+                </div>
+              </div>
+            ))
+          )}
+
         </div>
       </div>
 
@@ -234,47 +219,33 @@ function ClientDashboard({ user }) {
         <p className="offers-subtitle">Aquí se mostrarán los préstamos activos y pendientes</p>
 
         <div className="offers-grid">
-          {prestamos.map(prestamo => (
-            <div className="">
-              {prestamo.state === 2 ? (<div key={prestamo.id} className="offer-card">
-              <div className="offer-header">
-                <span className="bank-badge">{prestamo.bank_name}</span>
-                <span className="rating">5⭐ {prestamo.puntos}</span>
-              </div>
-
-              <div className="offer-footer">
-                <span className="type-tag">{prestamo.tipo}</span>
-                <Link
-                  to="/show-lender-conditions"
-                  state={{
-                    lender_conditions_id: prestamo.lender_conditions_id, lender_user_id: prestamo.lender_user_id, client_user_id: user.id
-                  }}
-                  className='btn-action'
-                >
-                  Prestamo activo
-                </Link> 
-              </div>
-            </div>) : (<div key={prestamo.id} className="offer-card">
-              <div className="offer-header">
-                <span className="bank-badge">{prestamo.bank_name}</span>
-                <span className="rating">5⭐ {prestamo.puntos}</span>
-              </div>
-
-              <div className="offer-footer">
-                <span className="type-tag">{prestamo.tipo}</span>
-                <Link
-                  to="/show-lender-conditions"
-                  state={{
-                    lender_conditions_id: prestamo.lender_conditions_id, lender_user_id: prestamo.lender_user_id, client_user_id: user.id
-                  }}
-                  className='btn-action'
-                >
-                  Ver condiciones del préstamo
-                </Link> 
-              </div>
-            </div>)}
+          {prestamos.length === 0 ? (
+            <div className="offer-card">
+              <p>No tienes préstamos activos o pendientes. Acepta una oferta para ver los detalles de tu préstamo aquí.</p>
             </div>
-          ))}
+          ) : (
+            prestamos.map(prestamo => (
+              <div key={prestamo.id} className="offer-card">
+                <div className="offer-header">
+                  <span className="bank-badge">{prestamo.bank_name}</span>
+                  <span className="rating">5⭐ {prestamo.puntos}</span>
+                </div>
+
+                <div className="offer-footer">
+                  <span className="type-tag">{prestamo.tipo}</span>
+                  <Link
+                    to="/show-lender-conditions"
+                    state={{
+                      lender_conditions_id: prestamo.lender_conditions_id, lender_user_id: prestamo.lender_user_id, client_user_id: user.id
+                    }}
+                    className='btn-action'
+                  >
+                    Ver condiciones del préstamo
+                  </Link>
+                </div>
+              </div>
+            ))
+          )}
         </div>
       </div>
     </div>
