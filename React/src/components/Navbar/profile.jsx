@@ -95,47 +95,38 @@ function Profile() {
       });
   }, []);
 
-
   const validateDocumento = () => {
-  if (type_documente === "persona") {
-    // Validar cédula (11 dígitos)
-    const cedulaRegex = /^[0-9]{11}$/;
-    if (!cedulaRegex.test(documento)) {
-      Swal.fire({
-        icon: "warning",
-        title: "Cédula inválida",
-        text: "La cédula debe tener exactamente 11 dígitos numéricos.",
-      });
-      return false;
+    if (type_documente === "persona") {
+      // Validar cédula (11 dígitos)
+      const cedulaRegex = /^[0-9]{11}$/;
+      if (!cedulaRegex.test(documento)) {
+        Swal.fire({
+          icon: "warning",
+          title: "Cédula inválida",
+          text: "La cédula debe tener exactamente 11 dígitos numéricos.",
+        });
+        return false;
+      }
     }
-  }
 
-  if (type_documente === "empresa") {
-    // Validar RNC (9 dígitos)
-    const rncRegex = /^[0-9]{9}$/;
-    if (!rncRegex.test(documento)) {
-      Swal.fire({
-        icon: "warning",
-        title: "RNC inválido",
-        text: "El RNC debe tener exactamente 9 dígitos numéricos.",
-      });
-      return false;
+    if (type_documente === "empresa") {
+      // Validar RNC (9 dígitos)
+      const rncRegex = /^[0-9]{9}$/;
+      if (!rncRegex.test(documento)) {
+        Swal.fire({
+          icon: "warning",
+          title: "RNC inválido",
+          text: "El RNC debe tener exactamente 9 dígitos numéricos.",
+        });
+        return false;
+      }
     }
-  }
 
-  return true;
-};
-
-
-
+    return true;
+  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-
-    
-
-
-
 
     const rawToken = localStorage.getItem("token");
     const payload = parseJwt(rawToken);
@@ -159,6 +150,29 @@ function Profile() {
       data.append(key, updatedFormData[key]);
     });
     if (payload.role === "cliente") {
+      if (type_documente === "cedula") {
+        const cedulaRegex = /^[0-9]{11}$/;
+        if (!cedulaRegex.test(documento)) {
+          Swal.fire({
+            icon: "warning",
+            title: "Cédula inválida",
+            text: "La cédula debe tener exactamente 11 dígitos numéricos.",
+          });
+          return;
+        }
+      }
+
+      if (type_documente === "pasaporte") {
+        if (!documento || documento.length < 6) {
+          Swal.fire({
+            icon: "warning",
+            title: "Pasaporte inválido",
+            text: "El pasaporte debe tener al menos 6 caracteres.",
+          });
+          return;
+        }
+      }
+
       if (
         !first_name ||
         !last_name ||
@@ -178,82 +192,57 @@ function Profile() {
           title: "Campos obligatorios",
           text: "Todos los campos son obligatorios",
         });
-
         return;
       }
     }
 
-   if (payload.role === "prestamista") {
-  // Validación para persona física
-  if (type_documente === "persona") {
-    if (
-      !address ||
-      !phone ||
-      !second_phone ||
-      !documento ||
-      !nacionalidad ||
-      !Estado_civil ||
-      !sexo ||
-      !username
-    ) {
-      Swal.fire({
-        icon: "warning",
-        title: "Campos obligatorios",
-        text: "Todos los campos de persona física son obligatorios",
-      });
-      return;
+    if (payload.role === "prestamista") {
+      // Validación para persona física
+      if (type_documente === "persona") {
+        if (
+          !address ||
+          !phone ||
+          !second_phone ||
+          !documento ||
+          !nacionalidad ||
+          !Estado_civil ||
+          !sexo ||
+          !username
+        ) {
+          Swal.fire({
+            icon: "warning",
+            title: "Campos obligatorios",
+            text: "Todos los campos de persona física son obligatorios",
+          });
+          return;
+        }
+        if (!validateDocumento()) {
+          return;
+        }
+      }
+
+      // Validación para empresa
+      if (type_documente === "empresa") {
+        if (
+          !address ||
+          !phone ||
+          !second_phone ||
+          !documento ||
+          !representante ||
+          !username
+        ) {
+          Swal.fire({
+            icon: "warning",
+            title: "Campos obligatorios",
+            text: "Todos los campos de empresa son obligatorios",
+          });
+          return;
+        }
+        if (!validateDocumento()) {
+          return;
+        }
+      }
     }
-    if (!validateDocumento()) {
-      return;
-    }
-  }
-
-  // Validación para empresa
-  if (type_documente === "empresa") {
-    if (
-      !address ||
-      !phone ||
-      !second_phone ||
-      !documento ||
-      !representante ||
-      !username
-    ) {
-      Swal.fire({
-        icon: "warning",
-        title: "Campos obligatorios",
-        text: "Todos los campos de empresa son obligatorios",
-      });
-      return;
-    }
-    if (!validateDocumento()) {
-      return;
-    }
-
-    
-
-
-
-
-  }
-
-
-
-
-
-
-
-
-
-
-  
-
-
-
-
-
-
-}
-
 
     try {
       let body = {
@@ -328,327 +317,331 @@ function Profile() {
     <div className="profile-container">
       <h2>Editar Perfil</h2>
 
-     <form className="profile-form" onSubmit={handleSubmit}>
-  {/* ================= CLIENTE ================= */}
-  {role === "cliente" && (
-    <>
-      {/* INFORMACIÓN PERSONAL */}
-      <div className="form-section">
-        <h3>Información Personal</h3>
+      <form className="profile-form" onSubmit={handleSubmit}>
+        {/* ================= CLIENTE ================= */}
+        {role === "cliente" && (
+          <>
+            {/* INFORMACIÓN PERSONAL */}
+            <div className="form-section">
+              <h3>Información Personal</h3>
 
-        <div className="form-grid">
-          <div className="input-group">
-            <label>Nombre</label>
-            <input
-              name="first_name"
-              value={first_name}
-              onChange={(e) => setFirst_name(e.target.value)}
-              required
-            />
-          </div>
+              <div className="form-grid">
+                <div className="input-group">
+                  <label>Nombre</label>
+                  <input
+                    name="first_name"
+                    value={first_name}
+                    onChange={(e) => setFirst_name(e.target.value)}
+                    required
+                  />
+                </div>
 
-          <div className="input-group">
-            <label>Apellido</label>
-            <input
-              name="last_name"
-              value={last_name}
-              onChange={(e) => setLast_name(e.target.value)}
-              required
-            />
-          </div>
+                <div className="input-group">
+                  <label>Apellido</label>
+                  <input
+                    name="last_name"
+                    value={last_name}
+                    onChange={(e) => setLast_name(e.target.value)}
+                    required
+                  />
+                </div>
 
-          <div className="input-group">
-            <label>Teléfono</label>
-            <input
-              name="phone"
-              value={phone}
-              onChange={(e) => setPhone(e.target.value)}
-              required
-            />
-          </div>
+                <div className="input-group">
+                  <label>Teléfono</label>
+                  <input
+                    name="phone"
+                    value={phone}
+                    onChange={(e) => setPhone(e.target.value)}
+                    required
+                  />
+                </div>
 
-          <div className="input-group">
-            <label>Nacionalidad</label>
-            <input
-              name="nationality"
-              value={nationality}
-              onChange={(e) => setNationality(e.target.value)}
-              required
-            />
-          </div>
+                <div className="input-group">
+                  <label>Nacionalidad</label>
+                  <input
+                    name="nationality"
+                    value={nationality}
+                    onChange={(e) => setNationality(e.target.value)}
+                    required
+                  />
+                </div>
 
-          <div className="input-group">
-            <label>Fecha de nacimiento</label>
-            <input
-              type="date"
-              name="birth_date"
-              value={birth_date}
-              onChange={(e) => setBirth_date(e.target.value)}
-              required
-            />
-          </div>
+                <div className="input-group">
+                  <label>Fecha de nacimiento</label>
+                  <input
+                    type="date"
+                    name="birth_date"
+                    value={birth_date}
+                    onChange={(e) => setBirth_date(e.target.value)}
+                    required
+                  />
+                </div>
 
-          <div className="input-group">
-            <label>Estado civil</label>
-            <input
-              name="Estado_civil"
-              value={Estado_civil}
-              onChange={(e) => setEstado_civil(e.target.value)}
-              required
-            />
-          </div>
-        </div>
-      </div>
+                <div className="input-group">
+                  <label>Estado civil</label>
+                  <input
+                    name="Estado_civil"
+                    value={Estado_civil}
+                    onChange={(e) => setEstado_civil(e.target.value)}
+                    required
+                  />
+                </div>
+              </div>
+            </div>
 
-      {/* INFORMACIÓN LABORAL */}
-      <div className="form-section">
-        <h3>Información Laboral</h3>
+            {/* INFORMACIÓN LABORAL */}
+            <div className="form-section">
+              <h3>Información Laboral</h3>
 
-        <div className="form-grid">
-          <div className="input-group">
-            <label>Ocupación</label>
-            <input
-              name="occupation"
-              value={occupation}
-              onChange={(e) => setOccupation(e.target.value)}
-              required
-            />
-          </div>
-        </div>
-      </div>
+              <div className="form-grid">
+                <div className="input-group">
+                  <label>Ocupación</label>
+                  <input
+                    name="occupation"
+                    value={occupation}
+                    onChange={(e) => setOccupation(e.target.value)}
+                    required
+                  />
+                </div>
+              </div>
+            </div>
 
-      {/* DOCUMENTOS */}
-      <div className="form-section">
-        <h3>Documentación</h3>
+            {/* DOCUMENTOS */}
+            <div className="form-section">
+              <h3>Documentación</h3>
 
-        <div className="form-grid">
-          <div className="input-group">
-            <label>Documento</label>
-            <input
-              name="document"
-              value={document}
-              onChange={(e) => setDocument(e.target.value)}
-              required
-            />
-          </div>
+              <div className="form-grid">
+                <div className="input-group">
+                  <label>Tipo de documento</label>
+                  <select
+                    name="type_documente"
+                    value={document_type}
+                    onChange={(e) => setDocument_type(e.target.value)}
+                    required
+                  >
+                    <option value="">Seleccione...</option>
+                    <option value="cedula">Cédula</option>
+                    <option value="pasaporte">Pasaporte</option>
+                  </select>
+                </div>
 
-          <div className="input-group">
-            <label>Tipo de documento</label>
-            <input
-              name="document_type"
-              value={document_type}
-              onChange={(e) => setDocument_type(e.target.value)}
-              required
-            />
-          </div>
-        </div>
-      </div>
+                <div className="input-group">
+                  <label>Número de documento</label>
+                  <input
+                    name="documento"
+                    value={document}
+                    onChange={(e) => setDocument(e.target.value)}
+                    required
+                  />
+                </div>
+              </div>
+            </div>
 
-      {/* DIRECCIÓN */}
-      <div className="form-section">
-        <h3>Dirección</h3>
+            {/* DIRECCIÓN */}
+            <div className="form-section">
+              <h3>Dirección</h3>
 
-        <div className="form-grid">
-          <div className="input-group full-width">
-            <label>Dirección</label>
-            <input
-              name="address"
-              value={address}
-              onChange={(e) => setAddress(e.target.value)}
-              required
-            />
-          </div>
+              <div className="form-grid">
+                <div className="input-group full-width">
+                  <label>Dirección</label>
+                  <input
+                    name="address"
+                    value={address}
+                    onChange={(e) => setAddress(e.target.value)}
+                    required
+                  />
+                </div>
 
-          <div className="input-group">
-            <label>Ciudad</label>
-            <input
-              name="city"
-              value={city}
-              onChange={(e) => setCity(e.target.value)}
-              required
-            />
-          </div>
-        </div>
-      </div>
-    </>
-  )}
+                <div className="input-group">
+                  <label>Ciudad</label>
+                  <input
+                    name="city"
+                    value={city}
+                    onChange={(e) => setCity(e.target.value)}
+                    required
+                  />
+                </div>
+              </div>
+            </div>
+          </>
+        )}
 
-  {/* ================= PRESTAMISTA ================= */}
-  {role === "prestamista" && (
-    <>
-      {/* INFORMACIÓN GENERAL */}
-      <div className="form-section">
-        <h3>Información General</h3>
+        {/* ================= PRESTAMISTA ================= */}
+        {role === "prestamista" && (
+          <>
+            {/* INFORMACIÓN GENERAL */}
+            <div className="form-section">
+              <h3>Información General</h3>
 
-        <div className="form-grid">
-          <div className="input-group">
-            <label>Tipo de Prestamista</label>
+              <div className="form-grid">
+                <div className="input-group">
+                  <label>Tipo de Prestamista</label>
 
-            <select
-              name="type_documente"
-              value={type_documente}
-              onChange={(e) => setType_documente(e.target.value)}
-              required
-            >
-              <option value="">Seleccione...</option>
-              <option value="persona">Persona Física</option>
-              <option value="empresa">Empresa</option>
-            </select>
-          </div>
+                  <select
+                    name="type_documente"
+                    value={type_documente}
+                    onChange={(e) => setType_documente(e.target.value)}
+                    required
+                  >
+                    <option value="">Seleccione...</option>
+                    <option value="persona">Persona Física</option>
+                    <option value="empresa">Empresa</option>
+                  </select>
+                </div>
 
-          <div className="input-group">
-            <label>Teléfono</label>
+                <div className="input-group">
+                  <label>Teléfono</label>
 
-            <input
-              name="phone"
-              value={phone}
-              onChange={(e) => setPhone(e.target.value)}
-              required
-            />
-          </div>
+                  <input
+                    name="phone"
+                    value={phone}
+                    onChange={(e) => setPhone(e.target.value)}
+                    required
+                  />
+                </div>
 
-          <div className="input-group">
-            <label>Segundo Teléfono</label>
+                <div className="input-group">
+                  <label>Segundo Teléfono</label>
 
-            <input
-              name="second_phone"
-              value={second_phone}
-              onChange={(e) => setSecond_phone(e.target.value)}
-            />
-          </div>
+                  <input
+                    name="second_phone"
+                    value={second_phone}
+                    onChange={(e) => setSecond_phone(e.target.value)}
+                  />
+                </div>
 
-          <div className="input-group full-width">
-            <label>Dirección</label>
+                <div className="input-group full-width">
+                  <label>Dirección</label>
 
-            <input
-              name="address"
-              value={address}
-              onChange={(e) => setAddress(e.target.value)}
-              required
-            />
-          </div>
-        </div>
-      </div>
+                  <input
+                    name="address"
+                    value={address}
+                    onChange={(e) => setAddress(e.target.value)}
+                    required
+                  />
+                </div>
+              </div>
+            </div>
 
-      {/* PERSONA FÍSICA */}
-      {type_documente === "persona" && (
+            {/* PERSONA FÍSICA */}
+            {type_documente === "persona" && (
+              <div className="form-section">
+                <h3>Información Personal</h3>
+
+                <div className="form-grid">
+                  <div className="input-group">
+                    <label>Documento (Cédula)</label>
+
+                    <input
+                      name="documento"
+                      value={documento}
+                      onChange={(e) => setDocumento(e.target.value)}
+                      required
+                    />
+                  </div>
+
+                  <div className="input-group">
+                    <label>Nacionalidad</label>
+
+                    <input
+                      name="nacionalidad"
+                      value={nacionalidad}
+                      onChange={(e) => setNacionalidad(e.target.value)}
+                      required
+                    />
+                  </div>
+
+                  <div className="input-group">
+                    <label>Estado Civil</label>
+
+                    <select
+                      name="estado_civil"
+                      value={Estado_civil}
+                      onChange={(e) => setEstado_civil(e.target.value)}
+                      required
+                    >
+                      <option value="">Seleccione...</option>
+                      <option value="soltero">Soltero</option>
+                      <option value="casado">Casado</option>
+                      <option value="divorciado">Divorciado</option>
+                      <option value="viudo">Viudo</option>
+                    </select>
+                  </div>
+
+                  <div className="input-group">
+                    <label>Sexo</label>
+
+                    <select
+                      name="sexo"
+                      value={sexo}
+                      onChange={(e) => setSexo(e.target.value)}
+                      required
+                    >
+                      <option value="">Seleccione...</option>
+                      <option value="masculino">Masculino</option>
+                      <option value="femenino">Femenino</option>
+                      <option value="otro">Otro</option>
+                    </select>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* EMPRESA */}
+            {type_documente === "empresa" && (
+              <div className="form-section">
+                <h3>Información Empresarial</h3>
+
+                <div className="form-grid">
+                  <div className="input-group">
+                    <label>Documento (RNC)</label>
+
+                    <input
+                      name="documento"
+                      value={documento}
+                      onChange={(e) => setDocumento(e.target.value)}
+                      required
+                    />
+                  </div>
+
+                  <div className="input-group">
+                    <label>Representante Legal</label>
+
+                    <input
+                      name="representante"
+                      value={representante}
+                      onChange={(e) => setRepresentante(e.target.value)}
+                      required
+                    />
+                  </div>
+                </div>
+              </div>
+            )}
+          </>
+        )}
+
+        {/* CUENTA */}
         <div className="form-section">
-          <h3>Información Personal</h3>
+          <h3>Cuenta</h3>
 
           <div className="form-grid">
             <div className="input-group">
-              <label>Documento (Cédula)</label>
+              <label>Nombre de usuario</label>
 
               <input
-                name="documento"
-                value={documento}
-                onChange={(e) => setDocumento(e.target.value)}
-                required
-              />
-            </div>
-
-            <div className="input-group">
-              <label>Nacionalidad</label>
-
-              <input
-                name="nacionalidad"
-                value={nacionalidad}
-                onChange={(e) => setNacionalidad(e.target.value)}
-                required
-              />
-            </div>
-
-            <div className="input-group">
-              <label>Estado Civil</label>
-
-              <select
-                name="estado_civil"
-                value={Estado_civil}
-                onChange={(e) => setEstado_civil(e.target.value)}
-                required
-              >
-                <option value="">Seleccione...</option>
-                <option value="soltero">Soltero</option>
-                <option value="casado">Casado</option>
-                <option value="divorciado">Divorciado</option>
-                <option value="viudo">Viudo</option>
-              </select>
-            </div>
-
-            <div className="input-group">
-              <label>Sexo</label>
-
-              <select
-                name="sexo"
-                value={sexo}
-                onChange={(e) => setSexo(e.target.value)}
-                required
-              >
-                <option value="">Seleccione...</option>
-                <option value="masculino">Masculino</option>
-                <option value="femenino">Femenino</option>
-                <option value="otro">Otro</option>
-              </select>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* EMPRESA */}
-      {type_documente === "empresa" && (
-        <div className="form-section">
-          <h3>Información Empresarial</h3>
-
-          <div className="form-grid">
-            <div className="input-group">
-              <label>Documento (RNC)</label>
-
-              <input
-                name="documento"
-                value={documento}
-                onChange={(e) => setDocumento(e.target.value)}
-                required
-              />
-            </div>
-
-            <div className="input-group">
-              <label>Representante Legal</label>
-
-              <input
-                name="representante"
-                value={representante}
-                onChange={(e) => setRepresentante(e.target.value)}
+                name="username"
+                value={username}
+                onChange={(e) => setUsername(e.target.value)}
                 required
               />
             </div>
           </div>
         </div>
-      )}
-    </>
-  )}
 
-  {/* CUENTA */}
-  <div className="form-section">
-    <h3>Cuenta</h3>
-
-    <div className="form-grid">
-      <div className="input-group">
-        <label>Nombre de usuario</label>
-
-        <input
-          name="username"
-          value={username}
-          onChange={(e) => setUsername(e.target.value)}
-          required
-        />
-      </div>
-    </div>
-  </div>
-
-  <button type="submit" className="save-btn">
-    Guardar cambios
-  </button>
-</form>
+        <button type="submit" className="save-btn">
+          Guardar cambios
+        </button>
+      </form>
     </div>
   );
 }
