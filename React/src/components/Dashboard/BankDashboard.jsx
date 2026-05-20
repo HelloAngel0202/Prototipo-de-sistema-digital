@@ -8,7 +8,7 @@ function BankDashboard({ user }) {
   const [publications, setPublications] = useState([]);
   const [notifications, setNotifications] = useState([]);
 
-
+  // CORRECCIÓN AQUÍ: Pasamos el id de la solicitud para removerlo del estado
   const getInformationRequest = async (client_request_id, lender_id, client_id) => {
     try {
       const response = await axios.post(
@@ -18,43 +18,58 @@ function BankDashboard({ user }) {
           lender_id: lender_id,
           client_id: client_id
         }
-       
       );
+
+      // 1. Mostrar alerta de éxito
       Swal.fire({
-                  title: "Aceptado",
-                  html: "¡Solicitud enviada exitosamente!",
-                  icon: "success",
-                  timer: 2000,
-                  showConfirmButton: false,
-                });
+        title: "Aceptado",
+        html: "¡Solicitud enviada exitosamente!",
+        icon: "success",
+        timer: 2000,
+        showConfirmButton: false,
+      });
+
+      // 2. ACTUALIZACIÓN DEL ESTADO: Filtramos la publicación para que desaparezca de la vista del Lender
+      setPublications(prevPublications =>
+        prevPublications.filter(solicitud => solicitud.id !== client_request_id)
+      );
+
+      // 3. OPCIONAL: Si quieres que aparezca inmediatamente abajo en "Solicitudes enviadas" sin recargar la página,
+      // puedes volver a ejecutar la función de cargar notificaciones:
+      obtenerNotificaciones();
+
     } catch (error) {
       console.error("Error obteniendo información de la solicitud:", error);
+      Swal.fire({
+        title: "Error",
+        text: "No se pudo procesar la solicitud.",
+        icon: "error"
+      });
+    }
+  };
+
+  // Extraemos las funciones del useEffect para poder reutilizarlas si es necesario
+  const obtenerNotificaciones = async () => {
+    try {
+      const response = await axios.get(
+        `http://localhost:3001/users/sended-notifications?lender_id=${user.id}`
+      );
+      setNotifications(response.data);
+    } catch (error) {
+      console.error("Error obteniendo notificaciones:", error);
     }
   };
 
   useEffect(() => {
     const obtenerSolicitudes = async () => {
-
       try {
         const response = await axios.get(
           "http://localhost:3001/users/brpublic"
         );
-
+        console.log("Publicaciones obtenidas:", response.data);
         setPublications(response.data);
       } catch (error) {
         console.error("Error obteniendo publicaciones:", error);
-      }
-    };
-    const obtenerNotificaciones = async () => {
-
-
-      try {
-        const response = await axios.get(
-          `http://localhost:3001/users/sended-notifications?lender_id=${user.id}`
-        );
-        setNotifications(response.data);
-      } catch (error) {
-        console.error("Error obteniendo notificaciones:", error);
       }
     };
 
@@ -76,22 +91,29 @@ function BankDashboard({ user }) {
       <section className="market-feed">
         <h2>Oportunidades de Préstamos</h2>
 
-        {publications.map((solicitud) => (
-          <div key={solicitud.id} className="request-feed-card">
-            <div className="card-top">
-              <span className="amount-tag">
-                RD$ {Number(solicitud.amount).toLocaleString()}
-              </span>
-              <p>{solicitud.reason}</p>
-              <p>
-                <button onClick={() => { getInformationRequest(solicitud.id, user.id, solicitud.user_id) }}>Solicitar información</button>
+        {publications
+          .filter((solicitud) => !notifications.some(n => n.client_request_id === solicitud.id))
+          .map((solicitud) => (
+            <div key={solicitud.id} className="request-feed-card">
+              <div className="card-top">
+                <span className="amount-tag">
+                  RD$ {Number(solicitud.amount).toLocaleString()}
+                </span>
+                <p>{solicitud.reason}</p>
+                <p>
+                  {/* Ya no necesitas evaluar el 'pendiente' aquí, porque el filtro 
+              de arriba ya borró la tarjeta por completo del muro.
+            */}
+                  <button onClick={() => { getInformationRequest(solicitud.id, user.id, solicitud.user_id) }}>
+                    Solicitar información
+                  </button>
+                </p>
+              </div>
+              <p className="publication-meta">
+                Publicada el {new Date(solicitud.created_at).toLocaleDateString('es-DO')}
               </p>
             </div>
-            <p className="publication-meta">
-              Publicada el {new Date(solicitud.created_at).toLocaleDateString('es-DO')}
-            </p>
-          </div>
-        ))}
+          ))}
       </section>
 
       <section className="accepted-request-notice">
@@ -118,7 +140,7 @@ function BankDashboard({ user }) {
                             notification_id: notification.id,
                             notification_client_id: notification.client_id
                           }
-                        }
+                          }
                           className='btn-action'
                         >
                           Enviar condiciones
@@ -127,22 +149,18 @@ function BankDashboard({ user }) {
                     </div>) :
                     (
                       <div>
-                        {/* // DArle estilos al boton disabled */}
-                        <button disabled> Espera a que el cliente acepte su solicitud</button>
+                        <button disabled className="btn-waiting"> Espera a que el cliente acepte su solicitud</button>
                       </div>
                     )
                   }
                 </div>
-                <p>
-                  {/* <button onClick={() => { getInformationRequest(notification.client_id, user.id) }}>Solicitar información</button> */}
-                </p>
               </div>
               <p className="publication-meta">
                 Publicada el {new Date(notification.created_at).toLocaleDateString('es-DO')}
               </p>
             </div>
           ))}
-          <p>
+          <p style={{ marginTop: '20px', fontStyle: 'italic', color: '#666' }}>
             Solicitud de información aceptada, el cliente ha permitido el acceso a su información financiera.
             Puedes revisar los detalles en la sección de solicitudes aceptadas.
           </p>

@@ -9,18 +9,20 @@ const LenderConditions = () => {
     const navigate = useNavigate();
     const { lender_id, request_id, notification_id, notification_client_id } = location.state || {};
     const [formData, setFormData] = useState({
-        lender_id: lender_id || '',
         request_id: request_id || '',
+        lender_id: lender_id || '',
         approved_amount: '',
         interest: '',
         interest_type: 'fija',
         rate_revision_period: 'anual',
         amortization_system: 'frances',
+        payment_frequency: 'mensual',
         fees_count: '',
         estimated_fee_amount: '',
         closing_costs: '',
         late_fee_percentage: '',
         message: '',
+        pay_days: '',
         expiration_date: '',
         notification_id: notification_id || '',
         notification_client_id: notification_client_id || '',
@@ -127,8 +129,20 @@ const LenderConditions = () => {
                             onChange={handleChange}
                         >
                             <option value="frances">Frances</option>
-                            <option value="alemann">Alemán</option>
-                            <option value="americano">Americano</option>
+                            <option value="aleman">Alemán</option>
+                        </select>
+                    </label>
+                    <label className="field-label">
+                        Frecuencia
+                        <select
+                            className="form-select"
+                            name="payment_frequency"
+                            value={formData.payment_frequency}
+                            onChange={handleChange}
+                        >
+                            <option value="mensual">semanal</option>
+                            <option value="quincenal">quincenal</option>
+                            <option value="semanal">mensual</option>
                         </select>
                     </label>
 
@@ -142,6 +156,7 @@ const LenderConditions = () => {
                             onChange={handleChange}
                         />
                     </label>
+
 
                     <label className="field-label">
                         Monto Estimado de Cuota
@@ -182,6 +197,17 @@ const LenderConditions = () => {
                             className="form-textarea"
                             name="message"
                             value={formData.message}
+                            onChange={handleChange}
+                        />
+                    </label>
+
+                    <label className="field-label field-textarea">
+                        Dias de Pago
+                        <input
+                            className="form-input"
+                            type="date"
+                            name="pay_days"
+                            value={formData.pay_days}
                             onChange={handleChange}
                         />
                     </label>

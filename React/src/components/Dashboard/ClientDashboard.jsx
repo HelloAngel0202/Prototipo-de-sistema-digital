@@ -10,6 +10,7 @@ function ClientDashboard({ user }) {
   const [notifications, setNotifications] = useState([]);
   const [lenderInfo, setLenderInfo] = useState({});
   const [loading, setLoading] = useState(true);
+  const [prestamos, setPrestamos] = useState([]);
 
   const acceptOffer = (offer) => {
     try {
@@ -71,13 +72,29 @@ function ClientDashboard({ user }) {
         const response = await axios.get(
           `http://localhost:3001/users/notifications?client_id=${user.id}`
         );
-        console.log('Notificaciones obtenidas:', response.data);
         setNotifications(response.data);
       } catch (error) {
         console.error('Error obteniendo notificaciones:', error);
       }
     };
+    const obtenerPrestamos = async () => {
+      if (!user?.id) {
+        setLoading(false);
+        return;
+      }
+      try {
+        const response = await axios.get(
+          `http://localhost:3001/users/my-loans?user_id=${user.id}`
+        );
+        console.log('Préstamos obtenidos:', response.data);
+        setPrestamos(response.data);
+      } catch (error) {
+        console.error('Error obteniendo préstamos:', error);
+      }
 
+    }
+
+    obtenerPrestamos();
     obtenerNotificaciones();
     obtenerPublicaciones();
 
@@ -166,21 +183,6 @@ function ClientDashboard({ user }) {
         </div>
       </section>
 
-      {/* Lista de Préstamos Activos (Simulada) */}
-      <section className="active-loans">
-        <h3>Tus Préstamos Activos</h3>
-        <div className="loan-item">
-          <div className="loan-header">
-            <span className="bank-name">Banco Verificado A</span>
-            <span className="status-badge approved">En curso</span>
-          </div>
-          <div className="loan-details">
-            <p>Monto original: <strong>RD$ 30,000</strong></p>
-            <p>Cuotas restantes: <strong>4 de 12</strong></p>
-          </div>
-        </div>
-      </section>
-
       <section className="user-publications">
         <h3>Tus solicitudes publicadas</h3>
         {loading ? (
@@ -194,7 +196,7 @@ function ClientDashboard({ user }) {
                 <span className="amount-tag">
                   RD$ {Number(solicitud.amount).toLocaleString()}
                 </span>
-                <span className={`status-badge ${solicitud.state}`}>{solicitud.state}</span>
+                <span className={`status-badge ${solicitud.state}`}>{solicitud.state == 1 ? "Pendiente" : "Aceptada"}</span>
               </div>
               <p>{solicitud.reason}</p>
               <p className="publication-meta">
@@ -221,6 +223,35 @@ function ClientDashboard({ user }) {
                 <button className="btn-accept" onClick={() => acceptOffer(notificacion)}>
                   Permitir acceso a mi información
                 </button>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      <div className="offers-container">
+        <h3>Préstamos</h3>
+        <p className="offers-subtitle">Aquí se mostrarán los préstamos activos y pendientes</p>
+
+        <div className="offers-grid">
+          {prestamos.map(prestamo => (
+            <div key={prestamo.id} className="offer-card">
+              <div className="offer-header">
+                <span className="bank-badge">{prestamo.bank_name}</span>
+                <span className="rating">5⭐ {prestamo.puntos}</span>
+              </div>
+
+              <div className="offer-footer">
+                <span className="type-tag">{prestamo.tipo}</span>
+                <Link
+                  to="/show-lender-conditions"
+                  state={{
+                    lender_conditions_id: prestamo.lender_conditions_id
+                  }}
+                  className='btn-action'
+                >
+                  Ver condiciones del préstamo
+                </Link> 
               </div>
             </div>
           ))}

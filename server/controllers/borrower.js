@@ -66,6 +66,27 @@ const notifications = async (req, res) => {
   }
 };
 
+const myLoans = async (req, res) => {
+  try {
+    const { user_id } = req.query;
+
+    const query = "SELECT l.*, len.name AS bank_name FROM loans l INNER JOIN users u ON l.lender_user_id = u.id INNER JOIN lender len ON u.information_id = len.id WHERE l.client_user_id = ?;";
+    const params = [user_id];
+
+    db.query(query, params, (err, results) => {
+      if (err) {
+        console.error("Error al consultar préstamos:", err);
+        return res.status(500).json({ message: "Error al obtener préstamos" });
+      }
+
+      res.status(200).json(results);
+    });
+  } catch (error) {
+    console.error("Error interno:", error);
+    res.status(500).send("Error interno del servidor");
+  }
+};
+
 const acceptOffer = async (req, res) => {
   try {
     const { offerId, clientRequestId } = req.query;
@@ -86,7 +107,7 @@ const acceptOffer = async (req, res) => {
 
       res.status(200).json({ message: "Oferta aceptada y notificaciones actualizadas exitosamente" });
     });
-    const updateRequestQuery = "UPDATE client_request SET state = 'accepted' WHERE id = ?";
+    const updateRequestQuery = "UPDATE client_request SET state = 2 WHERE id = ?";
     db.query(updateRequestQuery, [clientRequestId], (err, results) => {
       if (err) {
         console.error("Error al aceptar la oferta:", err);
@@ -107,5 +128,6 @@ module.exports = {
   publications,
   notifications,
   acceptOffer,
-  sendedNotifications
+  sendedNotifications,
+  myLoans
 };

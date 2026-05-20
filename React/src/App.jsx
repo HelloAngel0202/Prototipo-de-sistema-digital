@@ -10,6 +10,7 @@ import ClientDashboard from "./components/Dashboard/ClientDashboard";
 import BankDashboard from "./components/Dashboard/BankDashboard";
 import LoanRequestForm from "./components/LoanRequest/LoanRequestForm";
 import LenderConditions from "./components/LenderConditions/LenderConditions";
+import ShowLenderConditions from "./components/LenderConditions/ShowLenderConditions";
 
 function parseJwt(token) {
   if (!token) return null; // Evita el error si es null
@@ -89,7 +90,9 @@ function App() {
         <Route
           path="/lender-conditions"
           element={<LenderConditions />} />
-
+        <Route
+          path="/show-lender-conditions"
+          element={<ShowLenderConditions />} />
         <Route
           path="/dashboard"
           element={
