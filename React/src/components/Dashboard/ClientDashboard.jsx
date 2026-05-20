@@ -86,8 +86,8 @@ function ClientDashboard({ user }) {
         const response = await axios.get(
           `http://localhost:3001/users/my-loans?user_id=${user.id}`
         );
-        console.log('Préstamos obtenidos:', response.data);
         setPrestamos(response.data);
+        console.log("Préstamos obtenidos:", response.data);
       } catch (error) {
         console.error('Error obteniendo préstamos:', error);
       }
@@ -235,7 +235,8 @@ function ClientDashboard({ user }) {
 
         <div className="offers-grid">
           {prestamos.map(prestamo => (
-            <div key={prestamo.id} className="offer-card">
+            <div className="">
+              {prestamo.state === 2 ? (<div key={prestamo.id} className="offer-card">
               <div className="offer-header">
                 <span className="bank-badge">{prestamo.bank_name}</span>
                 <span className="rating">5⭐ {prestamo.puntos}</span>
@@ -246,13 +247,32 @@ function ClientDashboard({ user }) {
                 <Link
                   to="/show-lender-conditions"
                   state={{
-                    lender_conditions_id: prestamo.lender_conditions_id
+                    lender_conditions_id: prestamo.lender_conditions_id, lender_user_id: prestamo.lender_user_id, client_user_id: user.id
+                  }}
+                  className='btn-action'
+                >
+                  Prestamo activo
+                </Link> 
+              </div>
+            </div>) : (<div key={prestamo.id} className="offer-card">
+              <div className="offer-header">
+                <span className="bank-badge">{prestamo.bank_name}</span>
+                <span className="rating">5⭐ {prestamo.puntos}</span>
+              </div>
+
+              <div className="offer-footer">
+                <span className="type-tag">{prestamo.tipo}</span>
+                <Link
+                  to="/show-lender-conditions"
+                  state={{
+                    lender_conditions_id: prestamo.lender_conditions_id, lender_user_id: prestamo.lender_user_id, client_user_id: user.id
                   }}
                   className='btn-action'
                 >
                   Ver condiciones del préstamo
                 </Link> 
               </div>
+            </div>)}
             </div>
           ))}
         </div>

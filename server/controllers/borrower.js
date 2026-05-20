@@ -89,13 +89,12 @@ const myLoans = async (req, res) => {
 
 const acceptOffer = async (req, res) => {
   try {
-    const { offerId, clientRequestId } = req.query;
-
-    if (!offerId) {
-      return res.status(400).json({ message: "El ID de la oferta es requerido" });
+    const { offerId, clientRequestId, lender_user_id, client_user_id } = req.query;
+    if (!offerId || !clientRequestId || !lender_user_id || !client_user_id) {
+      return res.status(400).json({ message: "El ID de la oferta, la solicitud del cliente, el ID del prestamista y el ID del cliente son requeridos" });
     }
-    const updateNotificationsQuery = "UPDATE notifications SET state = 2 WHERE id = ?";
-    db.query(updateNotificationsQuery, [offerId], (err2, results2) => {
+    const updateNotificationsQuery = "UPDATE notifications SET state = 0 WHERE lender_id = ? AND client_id = ?";
+    db.query(updateNotificationsQuery, [lender_user_id, client_user_id], (err2, results2) => {
       if (err2) {
         console.error("Error al actualizar notificaciones:", err2);
         return res.status(500).json({ message: "Error al actualizar notificaciones" });
@@ -107,7 +106,17 @@ const acceptOffer = async (req, res) => {
 
       res.status(200).json({ message: "Oferta aceptada y notificaciones actualizadas exitosamente" });
     });
-    const updateRequestQuery = "UPDATE client_request SET state = 2 WHERE id = ?";
+    const updateLoansQuery = "UPDATE loans SET state = 2 WHERE lender_conditions_id = ?";
+    db.query(updateLoansQuery, [offerId], (err3, results3) => {
+      if (err3) {
+        console.error("Error al actualizar préstamos:", err3);
+        return res.status(500).json({ message: "Error al actualizar préstamos" });
+      }
+      if (results3.affectedRows === 0) {
+        console.warn("No se encontraron préstamos para actualizar");
+      }
+    });
+    const updateRequestQuery = "UPDATE client_request SET state = 3 WHERE id = ?";
     db.query(updateRequestQuery, [clientRequestId], (err, results) => {
       if (err) {
         console.error("Error al aceptar la oferta:", err);
