@@ -2,21 +2,86 @@ const { request } = require("express");
 const db = require("../bd");
 
 const createLenderConditions = async (req, res) => {
-  const { request_id, lender_id, approved_amount, interest, interest_type, rate_revision_period, amortization_system, payment_frequency, fees_count, estimated_fee_amount, closing_costs, late_fee_percentage, message, expiration_date, notification_id, notification_client_id, pay_days } = req.body;
-  console.log("Datos recibidos para crear condiciones del prestamista:", req.body);
-  let lenderCondition = '';
+  const {
+    request_id,
+    lender_id,
+    approved_amount,
+    interest,
+    interest_type,
+    rate_revision_period,
+    amortization_system,
+    payment_frequency,
+    fees_count,
+    estimated_fee_amount,
+    closing_costs,
+    late_fee_percentage,
+    message,
+    expiration_date,
+    notification_id,
+    notification_client_id,
+    pay_days,
+  } = req.body;
+  console.log(
+    "Datos recibidos para crear condiciones del prestamista:",
+    req.body,
+  );
+  let lenderCondition = "";
   try {
-    if (!request_id || !lender_id || !approved_amount || !interest || !interest_type || !rate_revision_period || !amortization_system || !payment_frequency || !fees_count || !estimated_fee_amount || !closing_costs || !late_fee_percentage || !message || !expiration_date || !notification_id || !notification_client_id || !pay_days) {
-      return res.status(400).json({ message: "Todos los campos son requeridos" });
+    if (
+      !request_id ||
+      !lender_id ||
+      !approved_amount ||
+      !interest ||
+      !interest_type ||
+      !rate_revision_period ||
+      !amortization_system ||
+      !payment_frequency ||
+      !fees_count ||
+      !estimated_fee_amount ||
+      !closing_costs ||
+      !late_fee_percentage ||
+      !message ||
+      !expiration_date ||
+      !notification_id ||
+      !notification_client_id ||
+      !pay_days
+    ) {
+      return res
+        .status(400)
+        .json({ message: "Todos los campos son requeridos" });
     }
-    console.log("Datos recibidos para crear condiciones del prestamista:", req.body);
+    console.log(
+      "Datos recibidos para crear condiciones del prestamista:",
+      req.body,
+    );
     db.query(
       "INSERT INTO lender_conditions (request_id, lender_id, approved_amount, interest, interest_type, rate_revision_period, amortization_system, payment_frequency,fees_count, estimated_fee_amount, closing_costs, late_fee_percentage, message, pay_days, expiration_date, state, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
-      [request_id, lender_id, approved_amount, interest, interest_type, rate_revision_period, amortization_system, payment_frequency, fees_count, estimated_fee_amount, closing_costs, late_fee_percentage, message, pay_days, expiration_date, 'pending', new Date(), new Date()],
+      [
+        request_id,
+        lender_id,
+        approved_amount,
+        interest,
+        interest_type,
+        rate_revision_period,
+        amortization_system,
+        payment_frequency,
+        fees_count,
+        estimated_fee_amount,
+        closing_costs,
+        late_fee_percentage,
+        message,
+        pay_days,
+        expiration_date,
+        "pending",
+        new Date(),
+        new Date(),
+      ],
       (err, result) => {
         if (err) {
           console.error("Error al crear condiciones del prestamista:", err);
-          return res.status(500).json({ message: "Error al crear condiciones del prestamista" });
+          return res
+            .status(500)
+            .json({ message: "Error al crear condiciones del prestamista" });
         }
         lenderCondition = result.insertId;
         db.query(
@@ -24,20 +89,47 @@ const createLenderConditions = async (req, res) => {
           [notification_id],
           (updateErr) => {
             if (updateErr) {
-              console.error("Error al actualizar el estado de notifications:", updateErr);
-              return res.status(500).json({ message: "Error al actualizar el estado de la notificación" });
+              console.error(
+                "Error al actualizar el estado de notifications:",
+                updateErr,
+              );
+              return res
+                .status(500)
+                .json({
+                  message: "Error al actualizar el estado de la notificación",
+                });
             }
 
-            db.query("INSERT INTO loans (client_user_id, lender_user_id, lender_conditions_id, state, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?)", [notification_client_id, lender_id, lenderCondition, 1, new Date(), new Date()], (responseErr) => {
-              if (responseErr) {
-                console.error("Error al crear lender_response:", responseErr);
-                return res.status(500).json({ message: "Error al crear la respuesta del prestamista" });
-              }
-            });
-            res.status(201).json({ message: "Condiciones del prestamista creadas exitosamente", id: result.insertId });
-          }
+            db.query(
+              "INSERT INTO loans (client_user_id, lender_user_id, lender_conditions_id, state, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?)",
+              [
+                notification_client_id,
+                lender_id,
+                lenderCondition,
+                1,
+                new Date(),
+                new Date(),
+              ],
+              (responseErr) => {
+                if (responseErr) {
+                  console.error("Error al crear lender_response:", responseErr);
+                  return res
+                    .status(500)
+                    .json({
+                      message: "Error al crear la respuesta del prestamista",
+                    });
+                }
+              },
+            );
+            res
+              .status(201)
+              .json({
+                message: "Condiciones del prestamista creadas exitosamente",
+                id: result.insertId,
+              });
+          },
         );
-      }
+      },
     );
   } catch (error) {
     console.error("Error en crear condiciones del prestamista:", error);
@@ -50,7 +142,9 @@ const getClientRequest = async (req, res) => {
 
   try {
     if (!request_id) {
-      return res.status(400).json({ message: "El ID de la solicitud del cliente es requerido" });
+      return res
+        .status(400)
+        .json({ message: "El ID de la solicitud del cliente es requerido" });
     }
 
     db.query(
@@ -59,15 +153,19 @@ const getClientRequest = async (req, res) => {
       (err, result) => {
         if (err) {
           console.error("Error al consultar la solicitud del cliente:", err);
-          return res.status(500).json({ message: "Error al obtener la solicitud del cliente" });
+          return res
+            .status(500)
+            .json({ message: "Error al obtener la solicitud del cliente" });
         }
 
         if (result.length === 0) {
-          return res.status(404).json({ message: "Solicitud del cliente no encontrada" });
+          return res
+            .status(404)
+            .json({ message: "Solicitud del cliente no encontrada" });
         }
 
         res.status(200).json(result[0]);
-      }
+      },
     );
   } catch (error) {
     console.error("Error en obtener la solicitud del cliente:", error);
@@ -80,25 +178,36 @@ const showLenderConditions = async (req, res) => {
 
   try {
     if (!lender_conditions_id) {
-      return res.status(400).json({ message: "El ID de las condiciones del prestamista es requerido" });
+      return res
+        .status(400)
+        .json({
+          message: "El ID de las condiciones del prestamista es requerido",
+        });
     }
 
-    db.query(
-      "SELECT * FROM lender_conditions WHERE id = ?",
-      [lender_conditions_id],
-      (err, result) => {
-        if (err) {
-          console.error("Error al consultar condiciones del prestamista:", err);
-          return res.status(500).json({ message: "Error al obtener condiciones del prestamista" });
-        }
+    const sql = `
+     SELECT lc.*, l.name AS lender_name 
+FROM lender_conditions lc 
+LEFT JOIN lender l ON lc.lender_id = l.id 
+WHERE lc.id = ?
+    `;
 
-        if (result.length === 0) {
-          return res.status(404).json({ message: "Condiciones del prestamista no encontradas" });
-        }
-
-        res.status(200).json(result[0]);
+    db.query(sql, [lender_conditions_id], (err, result) => {
+      if (err) {
+        console.error("Error al consultar condiciones del prestamista:", err);
+        return res
+          .status(500)
+          .json({ message: "Error al obtener condiciones del prestamista" });
       }
-    );
+
+      if (result.length === 0) {
+        return res
+          .status(404)
+          .json({ message: "Condiciones del prestamista no encontradas" });
+      }
+
+      res.status(200).json(result[0]);
+    });
   } catch (error) {
     console.error("Error en obtener condiciones del prestamista:", error);
     res.status(500).send("Error interno del servidor");
@@ -110,7 +219,9 @@ const publications = async (req, res) => {
     const { user_id, amount, reason } = req.body;
 
     if (!user_id || !amount || !reason) {
-      return res.status(400).json({ message: "Todos los campos son requeridos" });
+      return res
+        .status(400)
+        .json({ message: "Todos los campos son requeridos" });
     }
 
     // Insertar publicación
@@ -120,24 +231,22 @@ const publications = async (req, res) => {
       (err, result) => {
         if (err) {
           console.error("Error al crear publicación:", err);
-          return res.status(500).json({ message: "Error al crear publicación" });
+          return res
+            .status(500)
+            .json({ message: "Error al crear publicación" });
         }
 
         res.status(201).json({
           message: "Publicación creada exitosamente",
           id_publicacion: result.insertId,
         });
-      }
+      },
     );
   } catch (error) {
     console.error("Error en publicación:", error);
     res.status(500).send("Error interno del servidor");
   }
 };
-
-
-
-
 
 const getLenderInfo = async (req, res) => {
   const { lender_id } = req.query;
@@ -154,7 +263,9 @@ const getLenderInfo = async (req, res) => {
       (err, result) => {
         if (err) {
           console.error("Error al consultar lender:", err);
-          return res.status(500).json({ message: "Error al obtener información del prestamista" });
+          return res
+            .status(500)
+            .json({ message: "Error al obtener información del prestamista" });
         }
 
         if (result.length === 0) {
@@ -178,7 +289,10 @@ const getRequestInfo = async (req, res) => {
     if (!client_request_id || !lender_id || !client_id) {
       return res
         .status(400)
-        .json({ message: "El ID de la solicitud y el ID del prestamista son requeridos" });
+        .json({
+          message:
+            "El ID de la solicitud y el ID del prestamista son requeridos",
+        });
     }
 
     // Enviar solicitud al cliente
@@ -197,7 +311,7 @@ const getRequestInfo = async (req, res) => {
           return res.status(404).json({ message: "Solicitud no encontrada" });
         }
         res.status(200).json(result[0]);
-      }
+      },
     );
   } catch (error) {
     console.error("Error en obtener información de la solicitud:", error);
@@ -211,5 +325,5 @@ module.exports = {
   getRequestInfo,
   getLenderInfo,
   showLenderConditions,
-  getClientRequest
+  getClientRequest,
 };

@@ -86,7 +86,7 @@ function LoanRequestForm() {
       }
 
       const requestData = {
-        user_id: payload.id,
+        user_id: payload.clid,
         amount : Number(amount.replace(/\D/g, "")),
         reason,
         state: "pendiente",

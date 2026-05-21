@@ -70,7 +70,7 @@ function ClientDashboard({ user }) {
 
       try {
         const response = await axios.get(
-          `http://localhost:3001/users/notifications?client_id=${user.id}`
+          `http://localhost:3001/users/notifications?client_id=${user.clid}`
         );
         setNotifications(response.data);
       } catch (error) {
@@ -84,7 +84,7 @@ function ClientDashboard({ user }) {
       }
       try {
         const response = await axios.get(
-          `http://localhost:3001/users/my-loans?user_id=${user.id}`
+          `http://localhost:3001/users/my-loans?user_id=${user.clid}`,
         );
         setPrestamos(response.data);
         console.log("Préstamos obtenidos:", response.data);

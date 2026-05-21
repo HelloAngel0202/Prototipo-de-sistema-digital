@@ -11,6 +11,7 @@ import BankDashboard from "./components/Dashboard/BankDashboard";
 import LoanRequestForm from "./components/LoanRequest/LoanRequestForm";
 import LenderConditions from "./components/LenderConditions/LenderConditions";
 import ShowLenderConditions from "./components/LenderConditions/ShowLenderConditions";
+import ShowClient from "./components/borrowerConditions/borrowerConditions";
 
 function parseJwt(token) {
   if (!token) return null; // Evita el error si es null
@@ -29,23 +30,21 @@ function parseJwt(token) {
 }
 
 function App() {
-
   const rawToken = localStorage.getItem("token");
   const payload = parseJwt(rawToken);
   const now = new Date().getTime();
 
   const tokenValido = payload ? payload.exp * 1000 > now : false;
 
-
   const [user, setUser] = useState(
     payload && tokenValido
       ? {
-        id: payload.id,
-        clid: payload.clid,
-        name: payload.name_user,
-        role: payload.role,
-        photo: payload.photo,
-      }
+          id: payload.id,
+          clid: payload.clid,
+          name: payload.name_user,
+          role: payload.role,
+          photo: payload.photo,
+        }
       : null,
   );
   // const [user, setUser] = useState(null);
@@ -69,6 +68,11 @@ function App() {
         />
 
         <Route
+          path="/show-client"
+          element={user ? <ShowClient /> : <Navigate to="/login" />}
+        />
+
+        <Route
           path="/new-request"
           element={
             user ? <LoanRequestForm user={user} /> : <Navigate to="/login" />
@@ -77,30 +81,32 @@ function App() {
 
         <Route
           path="/profile"
-          element={
-            user ? <Profile user={user} /> : <Navigate to="/login" />
-          }
+          element={user ? <Profile user={user} /> : <Navigate to="/login" />}
         />
         <Route
           path="/settings"
-          element={
-            user ? <Settings user={user} /> : <Navigate to="/login" />
-          }
+          element={user ? <Settings user={user} /> : <Navigate to="/login" />}
         />
-        <Route
-          path="/lender-conditions"
-          element={<LenderConditions />} />
+        <Route path="/lender-conditions" element={<LenderConditions />} />
         <Route
           path="/show-lender-conditions"
-          element={<ShowLenderConditions />} />
+          element={<ShowLenderConditions />}
+        />
         <Route
           path="/dashboard"
           element={
-            user ? (user.role === "prestamista" ? (<BankDashboard user={user} />) : (<ClientDashboard user={user} />)) : <Navigate to="/login" />
+            user ? (
+              user.role === "prestamista" ? (
+                <BankDashboard user={user} />
+              ) : (
+                <ClientDashboard user={user} />
+              )
+            ) : (
+              <Navigate to="/login" />
+            )
           }
         />
       </Routes>
-
     </div>
   );
 }
