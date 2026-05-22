@@ -11,6 +11,7 @@ app.use(express.json());
 
 // Usar las rutas de usuarios
 app.use("/users", usuariosRouter);
+app.use("/uploads", express.static("uploads"));
 
 
 app.listen(port, () => {

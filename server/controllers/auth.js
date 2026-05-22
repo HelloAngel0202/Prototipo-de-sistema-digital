@@ -43,8 +43,9 @@ const login = async (req, res) => {
             email: user.email,
             name_user: user.username,
             role: user.role,
-            photo:
-              "https://img.a.transfermarkt.technology/portrait/big/8198-1748102259.jpg?lm=1",
+            photo: user.profile_image
+              ? `http://localhost:3001/uploads/${user.profile_image}`
+              : null,
           },
           process.env.JWT_SECRET || "Stack",
           { expiresIn: "1h" },
@@ -75,7 +76,7 @@ const Register = async (req, res) => {
     // VALIDAR Contraseña
 
     const passwordRegex =
-      /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/;
+      /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*.?&])[A-Za-z\d@$!%*?&]{8,}$/;
 
     if (!passwordRegex.test(password)) {
       return res.status(400).json({
@@ -463,13 +464,14 @@ const updateUser = async (req, res) => {
       nacionalidad,
       sexo,
     } = req.body;
+    const profile_image = req.file ? req.file.filename : null;
 
     if (role === "cliente") {
       bd.query(
         `UPDATE client 
        SET first_name = ?, last_name = ?, phone = ?, nationality = ?, 
-           birth_date = ?, ocupation = ?, city = ?, 
-           document = ?, document_type = ?, Estado_civil = ?
+birth_date = ?, ocupation = ?, city = ?, 
+document = ?, document_type = ?, Estado_civil = ?,profile_image = COALESCE(?, profile_image)
        WHERE id = ?`,
         [
           first_name,
@@ -482,6 +484,7 @@ const updateUser = async (req, res) => {
           document,
           document_type,
           Estado_civil,
+          profile_image,
           clid,
         ],
         (err, resultClient) => {
@@ -495,9 +498,9 @@ const updateUser = async (req, res) => {
           // 2️⃣ Actualizar tabla users
           bd.query(
             `UPDATE users 
-           SET username = ?, address = ?, updated_at = NOW()
+           SET username = ?, address = ?,profile_image = COALESCE(?, profile_image), updated_at = NOW()
            WHERE id = ?`,
-            [username, address, id],
+            [username, address, profile_image, id],
             (err, resultUser) => {
               if (err) {
                 console.error("Error al actualizar usuario:", err);
@@ -506,10 +509,15 @@ const updateUser = async (req, res) => {
                   .json({ message: "Error al actualizar usuario" });
               }
 
+              const photoUrl = profile_image
+                ? `http://localhost:3001/uploads/${profile_image}`
+                : null;
+
               res.status(200).json({
                 message: "Usuario actualizado correctamente",
                 clientUpdate: resultClient.affectedRows,
                 userUpdate: resultUser.affectedRows,
+                photo: photoUrl,
               });
             },
           );
@@ -526,7 +534,8 @@ const updateUser = async (req, res) => {
        representante = ?, 
        nacionalidad = ?, 
        estado_civil = ?, 
-       sexo = ?
+       sexo = ?,
+        profile_image = COALESCE(?, profile_image)
    WHERE id = ?`,
         [
           username,
@@ -538,6 +547,7 @@ const updateUser = async (req, res) => {
           nacionalidad,
           Estado_civil,
           sexo,
+          profile_image,
           clid,
         ],
         (err, resultLender) => {
@@ -549,8 +559,8 @@ const updateUser = async (req, res) => {
           }
 
           bd.query(
-            `UPDATE users SET username = ?, address = ?, updated_at = NOW() WHERE id = ?`,
-            [username, address, id],
+            `UPDATE users SET username = ?, address = ?, profile_image = COALESCE(?, profile_image), updated_at = NOW() WHERE id = ?`,
+            [username, address, profile_image, id],
             (err, resultUser) => {
               if (err) {
                 console.error("Error al actualizar usuario:", err);
@@ -559,10 +569,15 @@ const updateUser = async (req, res) => {
                   .json({ message: "Error al actualizar usuario" });
               }
 
+              const photoUrl = profile_image
+                ? `http://localhost:3001/uploads/${profile_image}`
+                : null;
+
               res.status(200).json({
                 message: "Prestamista actualizado correctamente",
                 lenderUpdate: resultLender.affectedRows,
                 userUpdate: resultUser.affectedRows,
+                photo: photoUrl,
               });
             },
           );
@@ -575,6 +590,57 @@ const updateUser = async (req, res) => {
     // 1️⃣ Actualizar tabla client
   } catch (error) {
     console.error("Error en updateUser:", error);
+    res.status(500).send("Error interno del servidor");
+  }
+};
+
+const Clidate = async (req, res) => {
+  try {
+    const { clid } = req.query;
+
+    bd.query(
+      "SELECT * FROM client WHERE id = ?",
+      [clid],
+      (err, clientResult) => {
+        if (err) {
+          console.error("Error al obtener cliente:", err);
+          return res.status(500).json({
+            message: "Error al obtener cliente",
+          });
+        }
+
+        // Verificamos si existe el cliente
+        if (clientResult.length === 0) {
+          return res.status(404).json({
+            message: "Cliente no encontrado",
+          });
+        }
+
+        // Datos del cliente
+        const client = clientResult[0];
+
+        // Buscar usuario relacionado
+        bd.query(
+          "SELECT * FROM users WHERE information_id = ?",
+          [clid], // <- aquí debes usar el campo correcto
+          (err, userResult) => {
+            if (err) {
+              console.error("Error al obtener usuario:", err);
+              return res.status(500).json({
+                message: "Error al obtener usuario",
+              });
+            }
+
+            res.status(200).json({
+              client: client,
+              user: userResult[0] || {},
+            });
+          },
+        );
+      },
+    );
+  } catch (error) {
+    console.error("Error en Clidate:", error);
     res.status(500).send("Error interno del servidor");
   }
 };
@@ -721,4 +787,5 @@ module.exports = {
   Userdate,
   checkClientData,
   verifyEmail,
+  Clidate,
 };

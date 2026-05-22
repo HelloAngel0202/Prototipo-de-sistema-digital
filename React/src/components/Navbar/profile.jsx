@@ -39,6 +39,8 @@ function Profile() {
   const [nacionalidad, setNacionalidad] = useState("");
   const [sexo, setSexo] = useState("");
   const [type_documente, setType_documente] = useState("");
+  const [profileImage, setProfileImage] = useState(null);
+  const [imageFile, setImageFile] = useState(null);
 
   useEffect(() => {
     const rawToken = localStorage.getItem("token");
@@ -76,6 +78,11 @@ function Profile() {
           setOccupation(client.ocupation || "");
           setCity(client.city || "");
           setUsername(user.username || "");
+          if (client.profile_image) {
+            setProfileImage(
+              `http://localhost:3001/uploads/${client.profile_image}`,
+            );
+          }
         } else if (payload.role === "prestamista") {
           // datos de lender
           setAddress(lender.address || "");
@@ -88,6 +95,11 @@ function Profile() {
           setEstado_civil(lender.estado_civil || "");
           setSexo(lender.sexo || "");
           setType_documente(lender.type_documente || "");
+          if (lender.profile_image) {
+            setProfileImage(
+              `http://localhost:3001/uploads/${lender.profile_image}`,
+            );
+          }
         }
       })
       .catch((err) => {
@@ -289,10 +301,28 @@ function Profile() {
         };
       }
 
+      const formData = new FormData();
+
+      Object.keys(body).forEach((key) => {
+        formData.append(key, body[key]);
+      });
+
+      if (imageFile) {
+        formData.append("profile_image", imageFile);
+      }
+
       const response = await axios.put(
         "http://localhost:3001/users/updateUser",
-        body,
+        formData,
+        {
+          headers: {
+            "Content-Type": "multipart/form-data",
+          },
+        },
       );
+      if (response.data.photo) {
+        localStorage.setItem("userPhoto", response.data.photo);
+      }
 
       console.log("Respuesta del servidor:", response.data);
 
@@ -315,6 +345,18 @@ function Profile() {
 
   return (
     <div className="profile-container">
+      <div className="profile-photo-section">
+        <div className="photo-preview">
+          {profileImage ? (
+            <img src={profileImage} alt="Foto de perfil" />
+          ) : (
+            <div className="photo-placeholder">
+              <span>Sin foto</span>
+            </div>
+          )}
+        </div>
+      </div>
+
       <h2>Editar Perfil</h2>
 
       <form className="profile-form" onSubmit={handleSubmit}>
@@ -635,6 +677,27 @@ function Profile() {
                 required
               />
             </div>
+          </div>
+        </div>
+        {/* SUBIR FOTO */}
+        <div className="form-section">
+          <h3>Foto de Perfil</h3>
+
+          <div className="input-group full-width">
+            <label>Subir Foto</label>
+
+            <input
+              type="file"
+              accept="image/*"
+              onChange={(e) => {
+                const file = e.target.files[0];
+
+                if (file) {
+                  setImageFile(file);
+                  setProfileImage(URL.createObjectURL(file));
+                }
+              }}
+            />
           </div>
         </div>
 

@@ -68,7 +68,7 @@ function Navbar({ user, setUser }) {
               onClick={() => setMenuOpen(!menuOpen)}
             >
               <img
-                src={user.photo || "https://i.pravatar.cc/40"}
+                src={user.photo }
                 alt="Perfil"
                 className="profile-image"
               />

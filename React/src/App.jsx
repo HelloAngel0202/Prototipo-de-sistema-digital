@@ -12,6 +12,7 @@ import LoanRequestForm from "./components/LoanRequest/LoanRequestForm";
 import LenderConditions from "./components/LenderConditions/LenderConditions";
 import ShowLenderConditions from "./components/LenderConditions/ShowLenderConditions";
 import ShowClient from "./components/borrowerConditions/borrowerConditions";
+import ClientInfo from "./components/borrowerConditions/ClientInfo";
 
 function parseJwt(token) {
   if (!token) return null; // Evita el error si es null
@@ -43,7 +44,7 @@ function App() {
           clid: payload.clid,
           name: payload.name_user,
           role: payload.role,
-          photo: payload.photo,
+            photo: localStorage.getItem("userPhoto"),
         }
       : null,
   );
@@ -77,6 +78,11 @@ function App() {
           element={
             user ? <LoanRequestForm user={user} /> : <Navigate to="/login" />
           }
+        />
+
+        <Route
+          path="/client-info"
+          element={user ? <ClientInfo /> : <Navigate to="/login" />}
         />
 
         <Route
