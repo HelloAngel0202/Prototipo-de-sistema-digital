@@ -93,11 +93,9 @@ const createLenderConditions = async (req, res) => {
                 "Error al actualizar el estado de notifications:",
                 updateErr,
               );
-              return res
-                .status(500)
-                .json({
-                  message: "Error al actualizar el estado de la notificación",
-                });
+              return res.status(500).json({
+                message: "Error al actualizar el estado de la notificación",
+              });
             }
 
             db.query(
@@ -113,20 +111,16 @@ const createLenderConditions = async (req, res) => {
               (responseErr) => {
                 if (responseErr) {
                   console.error("Error al crear lender_response:", responseErr);
-                  return res
-                    .status(500)
-                    .json({
-                      message: "Error al crear la respuesta del prestamista",
-                    });
+                  return res.status(500).json({
+                    message: "Error al crear la respuesta del prestamista",
+                  });
                 }
               },
             );
-            res
-              .status(201)
-              .json({
-                message: "Condiciones del prestamista creadas exitosamente",
-                id: result.insertId,
-              });
+            res.status(201).json({
+              message: "Condiciones del prestamista creadas exitosamente",
+              id: result.insertId,
+            });
           },
         );
       },
@@ -178,18 +172,20 @@ const showLenderConditions = async (req, res) => {
 
   try {
     if (!lender_conditions_id) {
-      return res
-        .status(400)
-        .json({
-          message: "El ID de las condiciones del prestamista es requerido",
-        });
+      return res.status(400).json({
+        message: "El ID de las condiciones del prestamista es requerido",
+      });
     }
 
     const sql = `
-     SELECT lc.*, l.name AS lender_name 
-FROM lender_conditions lc 
-LEFT JOIN lender l ON lc.lender_id = l.id 
-WHERE lc.id = ?
+    SELECT 
+  lc.*, 
+  l.name AS lender_name, 
+  l.profile_image AS profile_image
+FROM lender_conditions lc
+LEFT JOIN lender l ON lc.lender_id = l.id
+WHERE lc.id = ?;
+
     `;
 
     db.query(sql, [lender_conditions_id], (err, result) => {
@@ -287,12 +283,9 @@ const getRequestInfo = async (req, res) => {
 
     // Validar campo obligatorio
     if (!client_request_id || !lender_id || !client_id) {
-      return res
-        .status(400)
-        .json({
-          message:
-            "El ID de la solicitud y el ID del prestamista son requeridos",
-        });
+      return res.status(400).json({
+        message: "El ID de la solicitud y el ID del prestamista son requeridos",
+      });
     }
 
     // Enviar solicitud al cliente

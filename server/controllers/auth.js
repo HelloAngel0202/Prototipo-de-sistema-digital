@@ -450,6 +450,7 @@ const updateUser = async (req, res) => {
       last_name,
       phone,
       nationality,
+      type_documente,
       document,
       document_type,
       address,
@@ -529,7 +530,8 @@ document = ?, document_type = ?, Estado_civil = ?,profile_image = COALESCE(?, pr
    SET name = ?, 
        address = ?, 
        phone = ?, 
-       second_phone = ?, 
+       second_phone = ?,
+       type_documente = ?, 
        documento = ?, 
        representante = ?, 
        nacionalidad = ?, 
@@ -542,6 +544,7 @@ document = ?, document_type = ?, Estado_civil = ?,profile_image = COALESCE(?, pr
           address,
           phone,
           second_phone,
+          type_documente,
           documento,
           representante,
           nacionalidad,
@@ -756,19 +759,42 @@ const checkClientData = (req, res) => {
       );
     } else if (role === "prestamista") {
       bd.query(
-        "SELECT name, address, phone FROM lender WHERE id = ?",
+        `SELECT 
+    type_documente,
+    name,
+    address,
+    phone,
+    second_phone,
+    documento,
+    representante,
+    nacionalidad,
+    estado_civil,
+    sexo,
+    profile_image
+  FROM lender 
+  WHERE id = ?`,
         [clid],
         (err, result) => {
           if (err) {
             console.error("Error al obtener prestamista:", err);
             return res.status(500).json(false);
           }
+
           if (result.length === 0) return res.json(false);
 
           const l = result[0];
-          const completo = l.name && l.address && l.phone;
 
-          return res.json(!!completo); // ✅ Solo true o false
+          const completo =
+            l.name &&
+            l.address &&
+            l.phone &&
+            l.documento &&
+            l.type_documente &&
+            l.nacionalidad &&
+            l.estado_civil &&
+            l.sexo;
+
+          return res.json(!!completo);
         },
       );
     } else {

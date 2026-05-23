@@ -1,12 +1,27 @@
 import "./BankDashboard.css";
 import axios from "axios";
 import { useState, useEffect } from "react";
-import { Link } from "react-router-dom";
+import { useNavigate, Link } from "react-router-dom";
 import Swal from "sweetalert2";
+
+function parseJwt(token) {
+  if (!token) return null;
+  const base64Url = token.split(".")[1];
+  const base64 = base64Url.replace(/-/g, "+").replace(/_/g, "/");
+  const jsonPayload = decodeURIComponent(
+    window
+      .atob(base64)
+      .split("")
+      .map((c) => "%" + ("00" + c.charCodeAt(0).toString(16)).slice(-2))
+      .join(""),
+  );
+  return JSON.parse(jsonPayload);
+}
 
 function BankDashboard({ user }) {
   const [publications, setPublications] = useState([]);
   const [notifications, setNotifications] = useState([]);
+  const navigate = useNavigate();
 
   // CORRECCIÓN AQUÍ: Pasamos el id de la solicitud para removerlo del estado
   const getInformationRequest = async (
@@ -15,6 +30,47 @@ function BankDashboard({ user }) {
     client_id,
   ) => {
     try {
+      const rawToken = localStorage.getItem("token");
+      const payload = parseJwt(rawToken);
+
+      const now = new Date().getTime();
+      const tokenValido = payload?.exp * 1000 > now;
+      if (!tokenValido) {
+        Swal.fire({
+          title: "Sesión expirada",
+          text: "Tu sesión ha expirado, inicia sesión nuevamente.",
+          icon: "warning",
+        });
+        navigate("/login");
+        return;
+      }
+
+      const check = await axios.get(
+        "http://localhost:3001/users/checkClientData",
+        {
+          params: { id: payload.id, clid: payload.clid, role: payload.role },
+          headers: { Authorization: `Bearer ${rawToken}` },
+        },
+      );
+
+      if (check.data === false) {
+        Swal.fire({
+          title: "Datos incompletos",
+          text: "Debes completar todos sus datos antes de hacer realizar solicitudes.",
+          icon: "warning",
+          showCancelButton: true,
+          confirmButtonText: "Completar mis datos",
+          cancelButtonText: "Ir al dashboard",
+        }).then((result) => {
+          if (result.isConfirmed) {
+            navigate("/profile");
+          } else {
+            navigate("/dashboard");
+          }
+        });
+        return;
+      }
+
       const response = await axios.post(
         `http://localhost:3001/users/getRequestInfo?client_request_id=${client_request_id}&lender_id=${lender_id}&client_id=${client_id}`,
         {

@@ -256,6 +256,33 @@ function Profile() {
       }
     }
 
+    const value = birth_date; // Suponiendo que birth_date es una cadena en formato "YYYY-MM-DD"
+
+    const today = new Date();
+    const birth = new Date(value);
+
+    let age = today.getFullYear() - birth.getFullYear();
+
+    const monthDiff = today.getMonth() - birth.getMonth();
+
+    // Ajustar si todavía no ha cumplido años este año
+    if (
+      monthDiff < 0 ||
+      (monthDiff === 0 && today.getDate() < birth.getDate())
+    ) {
+      age--;
+    }
+
+    if (age < 18) {
+      Swal.fire({
+        icon: "warning",
+        title: "Edad no permitida",
+        text: "Debes ser mayor de edad.",
+      });
+
+      return;
+    }
+
     try {
       let body = {
         id: payload.id,
@@ -293,6 +320,7 @@ function Profile() {
           address,
           phone,
           second_phone,
+          type_documente,
           documento,
           representante,
           nacionalidad,
@@ -410,11 +438,41 @@ function Profile() {
 
                 <div className="input-group">
                   <label>Fecha de nacimiento</label>
+
                   <input
                     type="date"
                     name="birth_date"
                     value={birth_date}
-                    onChange={(e) => setBirth_date(e.target.value)}
+                    onChange={(e) => {
+                      const value = e.target.value;
+
+                      const today = new Date();
+                      const birth = new Date(value);
+
+                      let age = today.getFullYear() - birth.getFullYear();
+
+                      const monthDiff = today.getMonth() - birth.getMonth();
+
+                      // Ajustar si todavía no ha cumplido años este año
+                      if (
+                        monthDiff < 0 ||
+                        (monthDiff === 0 && today.getDate() < birth.getDate())
+                      ) {
+                        age--;
+                      }
+
+                      if (age < 18) {
+                        Swal.fire({
+                          icon: "warning",
+                          title: "Edad no permitida",
+                          text: "Debes ser mayor de edad.",
+                        });
+
+                        return;
+                      }
+
+                      setBirth_date(value);
+                    }}
                     required
                   />
                 </div>
