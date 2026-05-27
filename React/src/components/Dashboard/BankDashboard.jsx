@@ -30,6 +30,7 @@ function BankDashboard({ user }) {
     client_id,
   ) => {
     try {
+      console.log("Solicitando información para la solicitud ID:", client_request_id, lender_id, client_id); // Log para depuración
       const rawToken = localStorage.getItem("token");
       const payload = parseJwt(rawToken);
 

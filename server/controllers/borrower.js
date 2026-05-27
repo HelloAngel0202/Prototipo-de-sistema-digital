@@ -48,6 +48,7 @@ const sendedNotifications = async (req, res) => {
 
 const notifications = async (req, res) => {
   try {
+    console.log("Obteniendo notificaciones para client_id:", req.query.client_id); // Log para depuración
     const { client_id } = req.query;
     const query = "SELECT * FROM notifications WHERE client_id = ? AND state = 1";
     const params = [client_id];

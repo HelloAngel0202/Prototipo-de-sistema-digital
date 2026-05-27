@@ -287,7 +287,6 @@ const getRequestInfo = async (req, res) => {
         message: "El ID de la solicitud y el ID del prestamista son requeridos",
       });
     }
-
     // Enviar solicitud al cliente
     db.query(
       "INSERT INTO notifications (client_request_id, lender_id, client_id, created_at, updated_at, state) VALUES (?, ?, ?, ?, ?, ?)",

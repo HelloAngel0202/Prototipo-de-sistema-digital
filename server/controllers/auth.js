@@ -730,6 +730,8 @@ const checkClientData = (req, res) => {
   try {
     const { clid, role } = req.query;
 
+    
+
     if (role === "cliente") {
       bd.query(
         "SELECT first_name, last_name, phone, cellphone, nationality, birth_date, ocupation, city, document, document_type, Estado_civil FROM client WHERE id = ?",
@@ -758,6 +760,7 @@ const checkClientData = (req, res) => {
         },
       );
     } else if (role === "prestamista") {
+      console.log("Verificando datos del prestamista con ID:", clid); // Log para depuración
       bd.query(
         `SELECT 
     type_documente,
@@ -767,9 +770,6 @@ const checkClientData = (req, res) => {
     second_phone,
     documento,
     representante,
-    nacionalidad,
-    estado_civil,
-    sexo,
     profile_image
   FROM lender 
   WHERE id = ?`,
@@ -789,10 +789,7 @@ const checkClientData = (req, res) => {
             l.address &&
             l.phone &&
             l.documento &&
-            l.type_documente &&
-            l.nacionalidad &&
-            l.estado_civil &&
-            l.sexo;
+            l.type_documente;
 
           return res.json(!!completo);
         },

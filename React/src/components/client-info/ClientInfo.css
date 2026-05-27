@@ -1,0 +1,165 @@
+/* ==========================================================================
+   Contenedor Principal y Estructura Base
+   ========================================================================== */
+.client-info-container {
+    max-width: 900px;
+    margin: 40px auto;
+    padding: 0 20px;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    color: #2c3e50;
+    background-color: transparent;
+}
+
+/* Encabezado del Perfil */
+.client-info-header {
+    text-align: center;
+    margin-bottom: 35px;
+    border-bottom: 2px solid #eef2f5;
+    padding-bottom: 20px;
+}
+
+.client-info-header h1 {
+    font-size: 28px;
+    color: #1a365d; /* Azul corporativo profundo */
+    margin: 0 0 10px 0;
+    font-weight: 700;
+    letter-spacing: -0.5px;
+}
+
+.client-info-header p {
+    font-size: 15px;
+    color: #627d98; /* Gris azulado suave */
+    margin: 0;
+    line-height: 1.5;
+}
+
+/* Wrapper de las Tarjetas */
+.profile-details-wrapper {
+    display: block; /* Mantiene la lectura lineal limpia */
+}
+
+/* ==========================================================================
+   Estilos de las Secciones / Tarjetas de Información
+   ========================================================================== */
+.info-card-section {
+    background: #ffffff;
+    border-radius: 12px;
+    padding: 24px;
+    margin-bottom: 25px;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03);
+    border: 1px solid #e4e9f0;
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+/* Efecto hover interactivo y sutil */
+.info-card-section:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.05), 0 4px 6px -2px rgba(0, 0, 0, 0.02);
+}
+
+/* Títulos de cada Bloque con indicador lateral izquierdo */
+.info-card-section h2 {
+    font-size: 18px;
+    color: #2b6cb0; /* Azul acento */
+    margin: 0 0 20px 0;
+    padding-left: 12px;
+    border-left: 4px solid #3182ce;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+}
+
+/* ==========================================================================
+   Estructura Grid Interna para los Datos
+   ========================================================================== */
+.info-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 16px;
+}
+
+.info-grid p {
+    margin: 0;
+    font-size: 15px;
+    color: #4a5568;
+    line-height: 1.6;
+    padding: 10px 14px;
+    background-color: #f8fafc; /* Fondo ligeramente tintado para cada dato */
+    border-radius: 8px;
+    border: 1px solid #edf2f7;
+}
+
+.info-grid p strong {
+    color: #718096;
+    font-weight: 500;
+    display: inline-block;
+    margin-right: 5px;
+}
+
+/* Forzar mayúsculas en el formato de Documentos (Ej: CÉDULA) */
+.uppercase-text {
+    text-transform: uppercase;
+    font-size: 13px;
+    font-weight: 600;
+    background-color: #e2e8f0;
+    padding: 2px 6px;
+    border-radius: 4px;
+    color: #4a5568;
+}
+
+/* ==========================================================================
+   Sección del Botón de Acción (Footer)
+   ========================================================================== */
+.action-footer {
+    text-align: center;
+    margin-top: 35px;
+    padding-top: 15px;
+}
+
+.btn-send-conditions {
+    background-color: #2b6cb0; /* Azul principal */
+    color: #ffffff;
+    font-size: 16px;
+    font-weight: 600;
+    padding: 15px 40px;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    box-shadow: 0 4px 14px rgba(43, 108, 176, 0.3);
+    transition: all 0.25s ease;
+}
+
+/* Comportamientos del Botón al interactuar */
+.btn-send-conditions:hover {
+    background-color: #2c5282; /* Azul más oscuro al pasar el mouse */
+    box-shadow: 0 6px 20px rgba(44, 82, 130, 0.4);
+    transform: translateY(-1px);
+}
+
+.btn-send-conditions:active {
+    transform: translateY(1px);
+    box-shadow: 0 2px 10px rgba(44, 82, 130, 0.3);
+}
+
+/* ==========================================================================
+   Estados de Carga y Errores (Feedback Visual)
+   ========================================================================== */
+.loading-box {
+    text-align: center;
+    padding: 50px;
+    font-size: 16px;
+    color: #4a5568;
+    background: #ffffff;
+    border-radius: 12px;
+    border: 1px solid #e4e9f0;
+}
+
+.error-box {
+    text-align: center;
+    padding: 40px;
+    background-color: #fff5f5;
+    border: 1px solid #fed7d7;
+    border-radius: 12px;
+    color: #c53030;
+    font-size: 15px;
+}

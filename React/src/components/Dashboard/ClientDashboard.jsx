@@ -200,7 +200,7 @@ const payload = useMemo(() => parseJwt(rawToken), [rawToken]);
           </div>
         ) : (
           publications.map((solicitud) => (
-            <div className="">
+            <div key={solicitud.id} className="">
               {solicitud.state === 1 ? (
                 <div key={solicitud.id} className="publication-card">
                   <div className="publication-header">
