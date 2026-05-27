@@ -486,12 +486,18 @@ function Profile() {
 
                 <div className="input-group">
                   <label>Estado civil</label>
-                  <input
+                  <select
                     name="Estado_civil"
                     value={Estado_civil}
                     onChange={(e) => setEstado_civil(e.target.value)}
                     required
-                  />
+                  >
+                    <option value="">Seleccione...</option>
+                    <option value="soltero">Soltero</option>
+                    <option value="casado">Casado</option>
+                    <option value="divorciado">Divorciado</option>
+                    <option value="viudo">Viudo</option>
+                  </select>
                 </div>
               </div>
             </div>
@@ -591,8 +597,8 @@ function Profile() {
                     required
                   >
                     <option value="">Seleccione...</option>
-                    <option value="persona">Persona Física</option>
-                    <option value="empresa">Empresa</option>
+                    <option value="persona">Prestamista individual</option>
+                    <option value="empresa">Banco</option>
                   </select>
                 </div>
 

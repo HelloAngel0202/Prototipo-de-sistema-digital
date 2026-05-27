@@ -341,7 +341,7 @@ const verifyEmail = async (req, res) => {
             (first_name, ocupation)
             VALUES (?, ?)
             `,
-            [name, "pendiente"],
+            [name, ""],
             (errClient, resultClient) => {
               if (errClient) {
                 console.error("Error al crear cliente:", errClient);
@@ -363,7 +363,7 @@ const verifyEmail = async (req, res) => {
           bd.query(
             `
             INSERT INTO lender
-            (name, address)
+            (name, email)
             VALUES (?, ?)
             `,
             [name, email],

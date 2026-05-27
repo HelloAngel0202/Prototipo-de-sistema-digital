@@ -2,7 +2,7 @@ import "./ClientDashboard.css";
 import { Link } from "react-router-dom";
 import OfferList from "../Offers/OfferList";
 import axios from "axios";
-import { useEffect, useState,useMemo  } from "react";
+import { useEffect, useState, useMemo } from "react";
 import Swal from "sweetalert2";
 
 function parseJwt(token) {
@@ -28,11 +28,11 @@ function ClientDashboard({ user }) {
 
 
   const rawToken = localStorage.getItem("token");
-const payload = useMemo(() => parseJwt(rawToken), [rawToken]);
+  const payload = useMemo(() => parseJwt(rawToken), [rawToken]);
   const clid = payload?.clid;
 
   console.log("Información del usuario:", payload);
- 
+
 
   // resto del código...
 
@@ -80,7 +80,7 @@ const payload = useMemo(() => parseJwt(rawToken), [rawToken]);
         setLoading(false);
         return;
       }
-       console.log("datos del cliente son :", clid);
+      console.log("datos del cliente son :", clid);
 
       try {
         const response = await axios.get(
@@ -195,8 +195,11 @@ const payload = useMemo(() => parseJwt(rawToken), [rawToken]);
         {loading ? (
           <p>Cargando tus solicitudes...</p>
         ) : publications.length === 0 ? (
-          <div className="publication-card">
+          <div className="offer-card">
             <p>No has publicado ninguna solicitud aún.</p>
+            <p className="offers-subtitle">
+              Publica una solicitud para empezar a recibir propuestas de los bancos. Cuéntales un poco sobre tu necesidad de financiamiento y espera a que lleguen las ofertas.
+            </p>
           </div>
         ) : (
           publications.map((solicitud) => (

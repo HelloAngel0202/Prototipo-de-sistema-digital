@@ -152,7 +152,9 @@ function BankDashboard({ user }) {
 
       <section className="market-feed">
         <h2>Oportunidades de Préstamos</h2>
-
+        <p className="offers-subtitle">
+          Descubre las solicitudes de financiamiento que se ajustan a tus criterios
+        </p>
         {publications
           .filter(
             (solicitud) =>
