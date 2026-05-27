@@ -450,17 +450,16 @@ function Profile() {
                     type="date"
                     name="birth_date"
                     value={birth_date}
-                    onChange={(e) => {
+                    onBlur={(e) => {
                       const value = e.target.value;
+                      if (!value) return;
 
                       const today = new Date();
                       const birth = new Date(value);
 
                       let age = today.getFullYear() - birth.getFullYear();
-
                       const monthDiff = today.getMonth() - birth.getMonth();
 
-                      // Ajustar si todavía no ha cumplido años este año
                       if (
                         monthDiff < 0 ||
                         (monthDiff === 0 && today.getDate() < birth.getDate())
@@ -474,7 +473,6 @@ function Profile() {
                           title: "Edad no permitida",
                           text: "Debes ser mayor de edad.",
                         });
-
                         return;
                       }
 
