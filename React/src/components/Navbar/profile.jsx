@@ -350,6 +350,13 @@ function Profile() {
       );
       if (response.data.photo) {
         localStorage.setItem("userPhoto", response.data.photo);
+
+        // Dispara evento para que useEffect lo detecte
+        window.dispatchEvent(
+          new CustomEvent("photoUpdated", {
+            detail: response.data.photo,
+          }),
+        );
       }
 
       console.log("Respuesta del servidor:", response.data);

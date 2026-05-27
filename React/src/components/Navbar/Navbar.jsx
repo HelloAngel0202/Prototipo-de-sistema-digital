@@ -22,10 +22,7 @@ function Navbar({ user, setUser }) {
   // cerrar al hacer click afuera
   useEffect(() => {
     const handleClickOutside = (event) => {
-      if (
-        menuRef.current &&
-        !menuRef.current.contains(event.target)
-      ) {
+      if (menuRef.current && !menuRef.current.contains(event.target)) {
         setMenuOpen(false);
       }
     };
@@ -33,20 +30,14 @@ function Navbar({ user, setUser }) {
     document.addEventListener("mousedown", handleClickOutside);
 
     return () => {
-      document.removeEventListener(
-        "mousedown",
-        handleClickOutside
-      );
+      document.removeEventListener("mousedown", handleClickOutside);
     };
   }, []);
 
   return (
     <header className="navbar">
       <div className="navbar-logo">
-        <Link
-          to="/"
-          style={{ color: "inherit", textDecoration: "none" }}
-        >
+        <Link to="/" style={{ color: "inherit", textDecoration: "none" }}>
           <h2>Gestor de prestamos</h2>
         </Link>
       </div>
@@ -68,7 +59,11 @@ function Navbar({ user, setUser }) {
               onClick={() => setMenuOpen(!menuOpen)}
             >
               <img
-                src={user.photo }
+                src={
+                  user.photo
+                    ? `${user.photo}?t=${new Date().getTime()}`
+                    : "/default-avatar.png"
+                }
                 alt="Perfil"
                 className="profile-image"
               />
@@ -80,31 +75,22 @@ function Navbar({ user, setUser }) {
 
             {menuOpen && (
               <div className="dropdown-menu">
-                <Link
-                  to="/profile"
-                  onClick={() => setMenuOpen(false)}
-                >
+                <Link to="/profile" onClick={() => setMenuOpen(false)}>
                   Editar perfil
                 </Link>
 
                 <Link
                   to="/notifications"
-                  onClick={() => navigate('/dashboard')}
+                  onClick={() => navigate("/dashboard")}
                 >
                   Notificaciones
                 </Link>
 
-                <Link
-                  to="/settings"
-                  onClick={() => setMenuOpen(false)}
-                >
+                <Link to="/settings" onClick={() => setMenuOpen(false)}>
                   Configuraciones
                 </Link>
 
-                <button
-                  className="logout-btn"
-                  onClick={handleLogout}
-                >
+                <button className="logout-btn" onClick={handleLogout}>
                   Salir
                 </button>
               </div>

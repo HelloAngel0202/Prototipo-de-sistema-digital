@@ -1,5 +1,5 @@
 import { Routes, Route, Navigate } from "react-router-dom";
-import { useState } from "react";
+import { useState,useEffect  } from "react";
 import Navbar from "./components/Navbar/Navbar";
 import Profile from "./components/Navbar/Profile";
 import Settings from "./components/Navbar/Settings";
@@ -48,6 +48,21 @@ function App() {
         }
       : null,
   );
+    useEffect(() => {
+    const handlePhotoUpdate = (event) => {
+      setUser((prev) =>
+        prev
+          ? { ...prev, photo: event.detail }
+          : prev
+      );
+    };
+
+    window.addEventListener("photoUpdated", handlePhotoUpdate);
+
+    return () => {
+      window.removeEventListener("photoUpdated", handlePhotoUpdate);
+    };
+  }, []);
   // const [user, setUser] = useState(null);
 
   return (
