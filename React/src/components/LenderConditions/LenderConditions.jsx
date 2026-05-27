@@ -217,7 +217,7 @@ const LenderConditions = () => {
   // 4. ENVÍO SEGURO DE DATOS LIMPIOS A LA BASE DE DATOS
   const handleSubmit = async (e) => {
     e.preventDefault();
-     const rawToken = localStorage.getItem("token");
+    const rawToken = localStorage.getItem("token");
     const payload = parseJwt(rawToken);
 
     if (!payload) {
@@ -378,6 +378,8 @@ const LenderConditions = () => {
                 required
               />
             </label>
+
+            
             <label className="field-label">
               Fecha de Expiración de Oferta
               <input
