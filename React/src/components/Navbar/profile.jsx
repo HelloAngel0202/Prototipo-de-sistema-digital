@@ -162,9 +162,9 @@ function Profile() {
       data.append(key, updatedFormData[key]);
     });
     if (payload.role === "cliente") {
-      if (type_documente === "cedula") {
+      if (document_type === "cedula") {
         const cedulaRegex = /^[0-9]{11}$/;
-        if (!cedulaRegex.test(documento)) {
+        if (!cedulaRegex.test(document)) {
           Swal.fire({
             icon: "warning",
             title: "Cédula inválida",
