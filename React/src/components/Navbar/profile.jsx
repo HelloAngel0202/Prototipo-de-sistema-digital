@@ -2,6 +2,8 @@ import "./css/Profile.css";
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
+import { IMaskInput } from "react-imask";
+
 import Swal from "sweetalert2";
 
 function parseJwt(token) {
@@ -255,6 +257,27 @@ function Profile() {
         }
       }
     }
+    const validateAge = (date) => {
+      if (!date || date.includes("_")) return false;
+
+      const [day, month, year] = date.split("/");
+
+      const birthDate = new Date(`${year}-${month}-${day}`);
+      const today = new Date();
+
+      let age = today.getFullYear() - birthDate.getFullYear();
+
+      const monthDiff = today.getMonth() - birthDate.getMonth();
+
+      if (
+        monthDiff < 0 ||
+        (monthDiff === 0 && today.getDate() < birthDate.getDate())
+      ) {
+        age--;
+      }
+
+      return age >= 18;
+    };
 
     const value = birth_date; // Suponiendo que birth_date es una cadena en formato "YYYY-MM-DD"
 
@@ -446,39 +469,18 @@ function Profile() {
                 <div className="input-group">
                   <label>Fecha de nacimiento</label>
 
-                  <input
-                    type="date"
-                    name="birth_date"
+                  <IMaskInput
+                    mask="00/00/0000"
                     value={birth_date}
-                    onBlur={(e) => {
-                      const value = e.target.value;
-                      if (!value) return;
-
-                      const today = new Date();
-                      const birth = new Date(value);
-
-                      let age = today.getFullYear() - birth.getFullYear();
-                      const monthDiff = today.getMonth() - birth.getMonth();
-
-                      if (
-                        monthDiff < 0 ||
-                        (monthDiff === 0 && today.getDate() < birth.getDate())
-                      ) {
-                        age--;
-                      }
-
-                      if (age < 18) {
-                        Swal.fire({
-                          icon: "warning",
-                          title: "Edad no permitida",
-                          text: "Debes ser mayor de edad.",
-                        });
-                        return;
-                      }
-
-                      setBirth_date(value);
-                    }}
+                    onAccept={(value) => setBirth_date(value)}
+                    placeholder="DD/MM/YYYY"
+                    name="birth_date"
                     required
+                    onBlur={(e) => {
+                      if (validateAge(e.target.value)) {
+                        setBirth_date(e.target.value);
+                      }
+                    }}
                   />
                 </div>
 
