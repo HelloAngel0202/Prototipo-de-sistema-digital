@@ -31,7 +31,7 @@ const ClientInfo = () => {
           `http://localhost:3001/users/Clidate?clid=${client_id}`,
         );
         setClientProfile(response.data);
-       
+
         setLoading(false);
       } catch (error) {
         console.error("Error obteniendo información del cliente:", error);
@@ -47,14 +47,15 @@ const ClientInfo = () => {
   }, [client_id]);
 
   // Función para manejar el clic del botón final
+  // Función para manejar el clic del botón final en ClientInfo.jsx
   const handleGoToConditions = () => {
-    // Redirige al formulario de condiciones financieras enviando todo el contexto
     navigate("/lender-conditions", {
       state: {
         lender_id: lender_id,
         request_id: request_id,
         notification_id: notification_id,
         notification_client_id: client_id,
+        clientProfile: clientProfile // <--- AGREGA ESTO AQUÍ para pasar la info del préstamo solicitado
       },
     });
   };
@@ -130,9 +131,9 @@ const ClientInfo = () => {
               <p>
                 <strong>Fecha de Nacimiento:</strong>{" "}
                 {clientProfile.client.birth_date
-                  ? new Date(
-                      clientProfile.client.birth_date,
-                    ).toLocaleDateString("es-DO")
+                  ?
+                  clientProfile.client.birth_date
+
                   : "N/A"}
               </p>
               <p>
@@ -173,7 +174,7 @@ const ClientInfo = () => {
               className="btn-send-conditions"
               onClick={handleGoToConditions}
             >
-              Enviar condiciones
+              Enviar condiciones de prestamo
             </button>
           </div>
         </div>

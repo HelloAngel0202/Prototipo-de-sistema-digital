@@ -288,6 +288,7 @@ const getRequestInfo = async (req, res) => {
       });
     }
     // Enviar solicitud al cliente
+    console.log("Datos recibidos para obtener información de la solicitud:", req.query);
     db.query(
       "INSERT INTO notifications (client_request_id, lender_id, client_id, created_at, updated_at, state) VALUES (?, ?, ?, ?, ?, ?)",
       [client_request_id, lender_id, client_id, new Date(), new Date(), 1],

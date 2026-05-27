@@ -196,14 +196,17 @@ function BankDashboard({ user }) {
             <div key={notification.id} className="request-feed-card">
               <div className="card-top">
                 <span className="amount-tag">
-                  <h2>{notification.client_name}</h2>
+                  {notification.state == 2 ? (<h2>{notification.client_name}</h2>) : (
+                    <h2>Cliente anónimo</h2>
+                  )}
+
                 </span>
                 <span className="amount-tag">
-                  <h2>
+                  <p>
                     {notification.state == 2
-                      ? "Información disponible"
+                      ? "Ya puedes ver la información del cliente"
                       : "Pendiente"}
-                  </h2>
+                  </p>
                 </span>
                 <div>
                   {notification.state == 2 ? (

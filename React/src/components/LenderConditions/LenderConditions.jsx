@@ -1,413 +1,434 @@
-import { useEffect, useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
-import "./LenderConditions.css";
 import axios from "axios";
-import Swal from "sweetalert2";
-
-function parseJwt(token) {
-  if (!token) return null;
-  const base64Url = token.split(".")[1];
-  const base64 = base64Url.replace(/-/g, "+").replace(/_/g, "/");
-  const jsonPayload = decodeURIComponent(
-    window
-      .atob(base64)
-      .split("")
-      .map((c) => "%" + ("00" + c.charCodeAt(0).toString(16)).slice(-2))
-      .join(""),
-  );
-  return JSON.parse(jsonPayload);
-}
+import "./LenderConditions.css";
 
 const LenderConditions = () => {
   const location = useLocation();
   const navigate = useNavigate();
-  const { lender_id, request_id, notification_id, notification_client_id } =
+
+  // 1. Recuperar absolutamente todo el contexto proveniente de ClientInfo
+  const { lender_id, request_id, notification_id, notification_client_id, clientProfile } =
     location.state || {};
 
+  // Intentar obtener el monto que el cliente solicitó originalmente para sugerirlo
+  const initialAmount = clientProfile?.request?.amount || clientProfile?.client?.amount_requested || "";
+
+  // 2. Estado de los inputs alineado con la desestructuración de tu backend
   const [formData, setFormData] = useState({
     request_id: request_id || "",
     lender_id: lender_id || "",
-    approved_amount: "",
+    approved_amount: initialAmount,
     interest: "",
-    interest_type: "fija",
-    rate_revision_period: "anual",
-    amortization_system: "frances",
-    payment_frequency: "mensual",
+    interest_type: "fija", 
+    rate_revision_period: "",
+    amortization_system: "frances", 
+    payment_frequency: "mensual", 
     fees_count: "",
-    estimated_fee_amount: "",
-    closing_costs: "",
-    late_fee_percentage: "",
+    estimated_fee_amount: "0.00",
+    closing_costs: "0.00",
+    late_fee_percentage: "0.00",
     message: "",
-    pay_days: "",
-    expiration_date: "",
-    notification_id: notification_id || "",
-    notification_client_id: notification_client_id || "",
+    pay_days: "" 
   });
 
-  // 1. Obtener datos iniciales de la solicitud
+  // Estado auxiliar para calcular los días de validez antes de enviarlo como fecha completa
+  const [expirationDays, setExpirationDays] = useState("5");
+
+  // Estados para controlar la renderización del calendario y estado de carga
+  const [amortizationSchedule, setAmortizationSchedule] = useState([]);
+  const [submitting, setSubmitting] = useState(false);
+
+  // 3. useEffect dinámico: recalcula la amortización automáticamente ante cualquier cambio
   useEffect(() => {
-    const rawToken = localStorage.getItem("token");
-    const payload = parseJwt(rawToken);
+    calculateAmortization();
+  }, [
+    formData.approved_amount,
+    formData.interest,
+    formData.amortization_system,
+    formData.payment_frequency,
+    formData.fees_count,
+    formData.pay_days
+  ]);
 
-    if (!payload) {
-      navigate("/login");
-      return;
-    }
-
-    const getClientRequest = async () => {
-      try {
-        const response = await axios.get(
-          `http://localhost:3001/users/get-client-request?request_id=${request_id}`,
-        );
-        const amount = response.data.amount.toString();
-        setFormData((prev) => ({
-          ...prev,
-          approved_amount: formatCurrency(amount),
-        }));
-      } catch (error) {
-        console.error("Error al obtener la solicitud:", error);
-      }
-    };
-    if (request_id) getClientRequest();
-  }, [request_id]);
-  //
-  useEffect(() => {
-    if (!formData.pay_days || !formData.fees_count) return;
-
-    const startDate = new Date(formData.pay_days);
-    const fees = Number(formData.fees_count);
-
-    if (isNaN(fees) || fees <= 0) return;
-
-    const expiration = new Date(startDate);
-
-    switch (formData.payment_frequency) {
-      case "mensual":
-        expiration.setMonth(expiration.getMonth() + fees);
-        break;
-
-      case "quincenal":
-        expiration.setDate(expiration.getDate() + fees * 15);
-        break;
-
-      case "semanal":
-        expiration.setDate(expiration.getDate() + fees * 7);
-        break;
-
-      default:
-        break;
-    }
-
+  // Manejador universal de cambios en los inputs para evitar bloqueos al escribir
+  const handleInputChange = (e) => {
+    const { name, value } = e.target;
     setFormData((prev) => ({
       ...prev,
-      expiration_date: expiration.toISOString().split("T")[0],
+      [name]: value,
     }));
-  }, [formData.pay_days, formData.fees_count, formData.payment_frequency]);
-
-  //
-
-  useEffect(() => {
-    if (
-      formData.pay_days &&
-      formData.fees_count &&
-      formData.payment_frequency
-    ) {
-      const startDate = new Date(formData.pay_days + "T00:00:00");
-      const expiration = new Date(startDate);
-
-      const cuotas = Number(formData.fees_count);
-
-      switch (formData.payment_frequency) {
-        case "mensual":
-          expiration.setMonth(expiration.getMonth() + cuotas);
-          break;
-
-        case "quincenal":
-          expiration.setDate(expiration.getDate() + cuotas * 15);
-          break;
-
-        case "semanal":
-          expiration.setDate(expiration.getDate() + cuotas * 7);
-          break;
-
-        default:
-          break;
-      }
-
-      // Formato YYYY-MM-DD sin problemas de UTC
-      const formattedDate = [
-        expiration.getFullYear(),
-        String(expiration.getMonth() + 1).padStart(2, "0"),
-        String(expiration.getDate()).padStart(2, "0"),
-      ].join("-");
-
-      setFormData((prev) => ({
-        ...prev,
-        expiration_date: formattedDate,
-      }));
-    }
-  }, [formData.pay_days, formData.fees_count, formData.payment_frequency]);
-  //
-
-  // 2. LÓGICA DE CÁLCULO AUTOMÁTICO: CUOTA Y COSTOS DE CIERRE (Monto + Intereses)
-  useEffect(() => {
-    const calculateLoanAndCosts = () => {
-      const principal = Number(formData.approved_amount.replace(/\D/g, ""));
-      const annualInterest = Number(formData.interest);
-      const periods = Number(formData.fees_count);
-
-      if (principal > 0 && annualInterest > 0 && periods > 0) {
-        // Tasa de interés mensual efectiva
-        const monthlyRate = annualInterest / 100 / 12;
-
-        // Fórmula de Amortización Francesa para la cuota mensual
-        const fee =
-          (principal * monthlyRate * Math.pow(1 + monthlyRate, periods)) /
-          (Math.pow(1 + monthlyRate, periods) - 1);
-
-        const roundedFee = Math.round(fee);
-
-        // Cálculo de Costos de Cierre: Monto Aprobado + Intereses Totales
-        // Intereses Totales = (Cuota Mensual * Cantidad de meses) - Capital Inicial
-        const totalPaid = roundedFee * periods;
-        const totalInterest = totalPaid - principal;
-        const closingCostsCalculated = principal + totalInterest; // Monto aprobado + intereses
-
-        setFormData((prev) => ({
-          ...prev,
-          estimated_fee_amount: formatCurrency(roundedFee.toString()),
-          closing_costs: formatCurrency(closingCostsCalculated.toString()), // Asignación automática
-        }));
-      } else {
-        // Si falta algún dato para el cálculo, limpiamos los campos automáticos
-        setFormData((prev) => ({
-          ...prev,
-          estimated_fee_amount: "",
-          closing_costs: "",
-        }));
-      }
-    };
-    calculateLoanAndCosts();
-  }, [formData.approved_amount, formData.interest, formData.fees_count]);
-
-  // 3. FUNCIONES ENCARGADAS DE FORMATEAR DINERO Y TASAS
-  const formatCurrency = (val) => {
-    const num = val.replace(/\D/g, "");
-    if (!num) return "";
-    return `RD$ ${new Intl.NumberFormat("es-DO").format(num)}`;
   };
 
-  const handleCurrencyChange = (e) => {
-    const { name, value } = e.target;
-    setFormData((prev) => ({ ...prev, [name]: formatCurrency(value) }));
-  };
+  // 4. Lógica Matemática de Amortización Dinámica (Francesa y Alemana)
+  const calculateAmortization = () => {
+    const principal = parseFloat(formData.approved_amount);
+    const annualRate = parseFloat(formData.interest);
+    const periods = parseInt(formData.fees_count);
 
-  const handleRateChange = (e) => {
-    const { name, value } = e.target;
-    // Permite máximo 2 dígitos para tasas de interés y moras
-    const clean = value.replace(/\D/g, "").slice(0, 2);
-    setFormData((prev) => ({ ...prev, [name]: clean }));
-  };
-
-  const handleChange = (e) => {
-    const { name, value } = e.target;
-    setFormData((prev) => ({ ...prev, [name]: value }));
-  };
-
-  // 4. ENVÍO SEGURO DE DATOS LIMPIOS A LA BASE DE DATOS
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    const rawToken = localStorage.getItem("token");
-    const payload = parseJwt(rawToken);
-
-    if (!payload) {
-      navigate("/login");
+    if (isNaN(principal) || isNaN(annualRate) || isNaN(periods) || principal <= 0 || annualRate <= 0 || periods <= 0) {
+      setAmortizationSchedule([]);
       return;
     }
 
-    // Des-formateamos los campos antes de enviarlos (Quitamos RD$ y comas)
-    const dataToSave = {
-      ...formData,
-      approved_amount: Number(formData.approved_amount.replace(/\D/g, "")),
-      closing_costs: Number(formData.closing_costs.replace(/\D/g, "")),
-      estimated_fee_amount: Number(
-        formData.estimated_fee_amount.replace(/\D/g, ""),
-      ),
-      interest: Number(formData.interest),
-      late_fee_percentage: Number(formData.late_fee_percentage),
-      fees_count: Number(formData.fees_count),
-      updated_at: new Date(),
+    // Definir la fecha base: si el usuario seleccionó una en pay_days se usa, sino el día actual
+    let baseDate = formData.pay_days ? new Date(formData.pay_days) : new Date();
+    let currentPayDate = new Date(baseDate);
+
+    let ratePerPeriod = 0;
+    let daysToAdd = 30;
+
+    switch (formData.payment_frequency) {
+      case "semanal":
+        ratePerPeriod = (annualRate / 100) / 52;
+        daysToAdd = 7;
+        break;
+      case "quincenal":
+        ratePerPeriod = (annualRate / 100) / 24;
+        daysToAdd = 15;
+        break;
+      case "mensual":
+      default:
+        ratePerPeriod = (annualRate / 100) / 12;
+        daysToAdd = 30;
+        break;
+    }
+
+    let schedule = [];
+    let remainingBalance = principal;
+    let calculatedFee = 0;
+
+    if (formData.amortization_system === "frances") {
+      calculatedFee = (principal * ratePerPeriod) / (1 - Math.pow(1 + ratePerPeriod, -periods));
+      
+      // Actualización directa y segura sin ciclar el useEffect
+      formData.estimated_fee_amount = calculatedFee.toFixed(2);
+
+      for (let i = 1; i <= periods; i++) {
+        const interestPayment = remainingBalance * ratePerPeriod;
+        const principalPayment = calculatedFee - interestPayment;
+        remainingBalance -= principalPayment;
+
+        schedule.push({
+          feeNumber: i,
+          paymentDate: currentPayDate.toISOString().split("T")[0],
+          feeAmount: calculatedFee,
+          interestPayment: interestPayment,
+          principalPayment: principalPayment,
+          remainingBalance: Math.max(0, remainingBalance),
+        });
+
+        currentPayDate.setDate(currentPayDate.getDate() + daysToAdd);
+      }
+    } else if (formData.amortization_system === "aleman") {
+      const principalPayment = principal / periods;
+      
+      for (let i = 1; i <= periods; i++) {
+        const interestPayment = remainingBalance * ratePerPeriod;
+        const feeAmount = principalPayment + interestPayment;
+        
+        if (i === 1) calculatedFee = feeAmount; 
+        
+        remainingBalance -= principalPayment;
+
+        schedule.push({
+          feeNumber: i,
+          paymentDate: currentPayDate.toISOString().split("T")[0],
+          feeAmount: feeAmount,
+          interestPayment: interestPayment,
+          principalPayment: principalPayment,
+          remainingBalance: Math.max(0, remainingBalance),
+        });
+
+        currentPayDate.setDate(currentPayDate.getDate() + daysToAdd);
+      }
+      formData.estimated_fee_amount = calculatedFee.toFixed(2);
+    }
+
+    setAmortizationSchedule(schedule);
+  };
+
+  // 5. Envío del Formulario acoplado con tu función `createLenderConditions`
+  const handleSubmitConditions = async (e) => {
+    e.preventDefault();
+    if (amortizationSchedule.length === 0) {
+      alert("Por favor, introduce los valores del préstamo para calcular la proyección.");
+      return;
+    }
+
+    setSubmitting(true);
+
+    // Calcular la fecha exacta de expiración (expiration_date)
+    const expDate = new Date();
+    expDate.setDate(expDate.getDate() + parseInt(expirationDays || 5));
+    const formattedExpirationDate = expDate.toISOString().slice(0, 19).replace("T", " ");
+
+    // Construcción del payload asegurando que NINGÚN campo sea null o vacío para pasar tu validación if()
+    const payload = {
+      request_id: parseInt(formData.request_id),
+      lender_id: parseInt(formData.lender_id),
+      approved_amount: parseFloat(formData.approved_amount),
+      interest: parseFloat(formData.interest),
+      interest_type: formData.interest_type,
+      // Si es fija, tu backend exige que no esté vacío, mandamos "No aplica"
+      rate_revision_period: formData.interest_type === "variable" ? formData.rate_revision_period : "No aplica",
+      amortization_system: formData.amortization_system,
+      payment_frequency: formData.payment_frequency,
+      fees_count: parseInt(formData.fees_count),
+      estimated_fee_amount: parseFloat(formData.estimated_fee_amount),
+      closing_costs: formData.closing_costs || "0.00",
+      late_fee_percentage: formData.late_fee_percentage || "0.00",
+      message: formData.message.trim() === "" ? "Términos estándar propuestos por el prestamista." : formData.message,
+      expiration_date: formattedExpirationDate,
+      pay_days: formData.pay_days, // Envía la fecha seleccionada en el input
+      notification_id: parseInt(notification_id), // Requerido obligatoriamente por tu backend
+      notification_client_id: parseInt(notification_client_id) // Requerido obligatoriamente por tu backend
     };
 
     try {
-      await axios.post(
-        "http://localhost:3001/users/lender-conditions",
-        dataToSave,
-      );
-      Swal.fire({
-        title: "Enviado",
-        text: "¡Condiciones enviadas exitosamente!",
-        icon: "success",
-        timer: 2000,
-        showConfirmButton: false,
-      });
-      navigate("/dashboard");
+      // Petición dirigida a tu controlador Express
+      const response = await axios.post("http://localhost:3001/users/lender-conditions", payload);
+      alert("¡Condiciones guardadas! Oferta enviada al cliente y notificación actualizada con éxito.");
+      navigate("/dashboard"); 
     } catch (error) {
-      console.error("Error al guardar las condiciones:", error);
-      Swal.fire("Error", "No se pudieron registrar las condiciones", "error");
+      console.error("Error al enviar las condiciones:", error);
+      if (error.response && error.response.data) {
+        alert(`Error del servidor: ${error.response.data.message}`);
+      } else {
+        alert("Hubo un error de conexión con el backend.");
+      }
+    } finally {
+      setSubmitting(false);
     }
   };
 
   return (
-    <div className="lender-conditions">
-      <div className="form-card">
-        <div className="form-header">
-          <h1>Condiciones del préstamo</h1>
-          <p>Define los términos financieros para el cliente.</p>
-        </div>
+    <div className="conditions-container">
+      <header className="conditions-header">
+        <h1>Configuración de Condiciones de Préstamo</h1>
+        <p>Estructurando propuesta para la solicitud de préstamo #{formData.request_id}</p>
+      </header>
 
-        <form className="lender-conditions-form" onSubmit={handleSubmit}>
-          <div className="grid-container">
-            <label className="field-label">
-              Monto Aprobado
+      <div className="conditions-content-layout">
+        
+        {/* COLUMNA DEL FORMULARIO INTERACTIVO */}
+        <form onSubmit={handleSubmitConditions} className="conditions-form">
+          <div className="form-section-title">Parámetros del Crédito</div>
+          
+          <div className="input-group-row">
+            <div className="form-field">
+              <label>Monto Aprobado (RD$)</label>
               <input
-                className="form-input"
-                type="text"
+                type="number"
                 name="approved_amount"
                 value={formData.approved_amount}
-                onChange={handleCurrencyChange}
+                onChange={handleInputChange}
+                placeholder="Monto a desembolsar"
                 required
               />
-            </label>
-
-            <label className="field-label">
-              Tasa de Interés Anual (%)
+            </div>
+            
+            <div className="form-field">
+              <label>Tasa de Interés Anual (%)</label>
               <input
-                className="form-input"
-                type="text"
+                type="number"
+                step="0.01"
                 name="interest"
-                placeholder="Ej. 18"
                 value={formData.interest}
-                onChange={handleRateChange}
+                onChange={handleInputChange}
+                placeholder="Ej. 18.5"
                 required
               />
-            </label>
+            </div>
+          </div>
 
-            <label className="field-label">
-              Cantidad de Cuotas (Meses)
+          <div className="input-group-row">
+            <div className="form-field">
+              <label>Sistema de Amortización</label>
+              <select name="amortization_system" value={formData.amortization_system} onChange={handleInputChange}>
+                <option value="frances">frances (Cuota Fija)</option>
+                <option value="aleman">aleman (Amortización Fija)</option>
+              </select>
+            </div>
+
+            <div className="form-field">
+              <label>Frecuencia de Pago</label>
+              <select name="payment_frequency" value={formData.payment_frequency} onChange={handleInputChange}>
+                <option value="semanal">semanal</option>
+                <option value="quincenal">quincenal</option>
+                <option value="mensual">mensual</option>
+              </select>
+            </div>
+          </div>
+
+          <div className="input-group-row">
+            <div className="form-field">
+              <label>Cantidad de Cuotas</label>
               <input
-                className="form-input"
                 type="number"
                 name="fees_count"
-                placeholder="Ej. 12"
                 value={formData.fees_count}
-                onChange={handleChange}
+                onChange={handleInputChange}
+                placeholder="Número de pagos"
                 required
               />
-            </label>
+            </div>
 
-            <label className="field-label">
-              Monto Estimado de Cuota
+            <div className="form-field">
+              <label>Fecha de Primer Pago (pay_days)</label>
               <input
-                className="form-input readonly-input"
-                type="text"
-                name="estimated_fee_amount"
-                value={formData.estimated_fee_amount}
-                readOnly // Protegido contra modificaciones manuales
-              />
-            </label>
-
-            <label className="field-label">
-              Tipo de Interés
-              <select
-                className="form-select"
-                name="interest_type"
-                value={formData.interest_type}
-                onChange={handleChange}
-              >
-                <option value="fija">Fija</option>
-                <option value="variable">Variable</option>
-              </select>
-            </label>
-
-            <label className="field-label">
-              Frecuencia de Pago
-              <select
-                className="form-select"
-                name="payment_frequency"
-                value={formData.payment_frequency}
-                onChange={handleChange}
-              >
-                <option value="mensual">Mensual</option>
-                <option value="quincenal">Quincenal</option>
-                <option value="semanal">Semanal</option>
-              </select>
-            </label>
-
-            <label className="field-label">
-              Costos de Cierre (Monto + Interés)
-              <input
-                className="form-input readonly-input"
-                type="text"
-                name="closing_costs"
-                value={formData.closing_costs}
-                readOnly // ¡AHORA CALCULADO AUTOMÁTICAMENTE Y PROTEGIDO!
-              />
-            </label>
-
-            <label className="field-label">
-              % Mora por Retraso
-              <input
-                className="form-input"
-                type="text"
-                name="late_fee_percentage"
-                placeholder="Ej. 5"
-                value={formData.late_fee_percentage}
-                onChange={handleRateChange}
-              />
-            </label>
-            <label className="field-label">
-              Fecha de pago
-              <input
-                className="form-input"
                 type="date"
                 name="pay_days"
                 value={formData.pay_days}
-                onChange={handleChange}
-                min={new Date().toISOString().split("T")[0]}
+                onChange={handleInputChange}
                 required
               />
-            </label>
-
-            
-            <label className="field-label">
-              Fecha de Expiración de Oferta
-              <input
-                className="form-input"
-                type="date"
-                name="expiration_date"
-                value={formData.expiration_date}
-                onChange={handleChange}
-                required
-              />
-            </label>
+            </div>
           </div>
 
-          <label className="field-label field-textarea">
-            Mensaje / Comentario Adicional
-            <textarea
-              className="form-textarea"
-              name="message"
-              placeholder="Detalles adicionales sobre los requisitos o desembolso..."
-              value={formData.message}
-              onChange={handleChange}
-            />
-          </label>
+          <div className="form-field">
+            <label>Tipo de Interés</label>
+            <select name="interest_type" value={formData.interest_type} onChange={handleInputChange}>
+              <option value="fija">fija</option>
+              <option value="variable">variable</option>
+            </select>
+          </div>
 
-          <button className="submit-button" type="submit">
-            Enviar Oferta al Cliente
+          {formData.interest_type === "variable" && (
+            <div className="form-field animate-fade">
+              <label>Período de Revisión de Tasa</label>
+              <input
+                type="text"
+                name="rate_revision_period"
+                value={formData.rate_revision_period}
+                onChange={handleInputChange}
+                placeholder="Ej. Cada 6 meses"
+                required={formData.interest_type === "variable"}
+              />
+            </div>
+          )}
+
+          <div className="form-section-title">Costos de Operación y Oferta</div>
+
+          <div className="input-group-row">
+            <div className="form-field">
+              <label>Gastos de Cierre (RD$)</label>
+              <input
+                type="number"
+                step="0.01"
+                name="closing_costs"
+                value={formData.closing_costs}
+                onChange={handleInputChange}
+              />
+            </div>
+
+            <div className="form-field">
+              <label>% Recargo por Mora</label>
+              <input
+                type="number"
+                step="0.01"
+                name="late_fee_percentage"
+                value={formData.late_fee_percentage}
+                onChange={handleInputChange}
+              />
+            </div>
+          </div>
+
+          <div className="form-field">
+            <label>Días de Validez de la Oferta (Calcula expiration_date)</label>
+            <input
+              type="number"
+              value={expirationDays}
+              onChange={(e) => setExpirationDays(e.target.value)}
+              min="1"
+              required
+            />
+          </div>
+
+          <div className="form-field">
+            <label>Mensaje o Comentarios para el Cliente</label>
+            <textarea
+              name="message"
+              value={formData.message}
+              onChange={handleInputChange}
+              placeholder="Escribe aclaraciones opcionales..."
+              rows="3"
+            />
+          </div>
+
+          <button type="submit" className="btn-submit-conditions" disabled={submitting}>
+            {submitting ? "Ejecutando Procesos en Servidor..." : "Subir Condiciones y Enviar"}
           </button>
         </form>
+
+        {/* COLUMNA DERECHA: PANEL DE MONITOREO DINÁMICO */}
+        <div className="conditions-preview-panel">
+          <div className="preview-card-summary">
+            <h3>Cuota Proyectada</h3>
+            <div className="summary-main-value">
+              <span className="currency">RD$</span>
+              <span className="amount">
+                {parseFloat(formData.estimated_fee_amount || 0).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+              </span>
+              <span className="period-label">
+                {formData.amortization_system === "frances" ? ` / ${formData.payment_frequency}` : " / 1era cuota base"}
+              </span>
+            </div>
+            
+            <div className="summary-grid">
+              <div className="summary-item">
+                <span>Capital</span>
+                <strong>RD$ {parseFloat(formData.approved_amount || 0).toLocaleString()}</strong>
+              </div>
+              <div className="summary-item">
+                <span>Tasa Interés</span>
+                <strong>{formData.interest || 0}% Anual</strong>
+              </div>
+              <div className="summary-item">
+                <span>Método</span>
+                <strong className="capitalize">{formData.amortization_system}</strong>
+              </div>
+            </div>
+          </div>
+
+          {/* LISTADO DE DÍAS DE PAGO TIPO CALENDARIO */}
+          <div className="preview-schedule-wrapper">
+            <h3>Cronograma Detallado de Pagos</h3>
+            {amortizationSchedule.length > 0 ? (
+              <div className="table-responsive">
+                <table className="amortization-table">
+                  <thead>
+                    <tr>
+                      <th>Cuota</th>
+                      <th>Día de Pago</th>
+                      <th>Total Cuota</th>
+                      <th>Capital</th>
+                      <th>Interés</th>
+                      <th>Balance Restante</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {amortizationSchedule.map((row) => (
+                      <tr key={row.feeNumber}>
+                        <td>#{row.feeNumber}</td>
+                        <td>{row.paymentDate}</td>
+                        <td className="bold">RD$ {row.feeAmount.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
+                        <td>RD$ {row.principalPayment.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
+                        <td>RD$ {row.interestPayment.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
+                        <td>RD$ {row.remainingBalance.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            ) : (
+              <div className="empty-schedule-state">
+                <p>Ingresa los datos del crédito y selecciona la fecha inicial para proyectar dinámicamente los días de cobro.</p>
+              </div>
+            )}
+          </div>
+        </div>
+
       </div>
     </div>
   );
