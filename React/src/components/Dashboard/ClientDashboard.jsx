@@ -3,6 +3,7 @@ import { Link } from "react-router-dom";
 import OfferList from "../Offers/OfferList";
 import axios from "axios";
 import { useEffect, useState, useMemo } from "react";
+import LenderConditionsModal from "../LenderConditions/LenderConditionsModal";
 import Swal from "sweetalert2";
 
 function parseJwt(token) {
@@ -25,13 +26,13 @@ function ClientDashboard({ user }) {
   const [lenderInfo, setLenderInfo] = useState({});
   const [loading, setLoading] = useState(true);
   const [prestamos, setPrestamos] = useState([]);
+  const [modalConditionId, setModalConditionId] = useState(null);
 
 
   const rawToken = localStorage.getItem("token");
   const payload = useMemo(() => parseJwt(rawToken), [rawToken]);
   const clid = payload?.clid;
 
-  console.log("Información del usuario:", payload);
 
 
   // resto del código...
@@ -47,7 +48,6 @@ function ClientDashboard({ user }) {
           setNotifications((prev) =>
             prev.filter((notificacion) => notificacion.id !== offer.id),
           );
-          console.log(notifications);
           Swal.fire({
             title: "Aceptado",
             html: "¡Oferta aceptada exitosamente!",
@@ -80,7 +80,6 @@ function ClientDashboard({ user }) {
         setLoading(false);
         return;
       }
-      console.log("datos del cliente son :", clid);
 
       try {
         const response = await axios.get(
@@ -118,7 +117,6 @@ function ClientDashboard({ user }) {
           `http://localhost:3001/users/my-loans?user_id=${clid}`,
         );
         setPrestamos(response.data);
-        console.log("Préstamos obtenidos:", response.data);
       } catch (error) {
         console.error("Error obteniendo préstamos:", error);
       }
@@ -202,29 +200,27 @@ function ClientDashboard({ user }) {
             </p>
           </div>
         ) : (
-          publications.map((solicitud) => (
-            <div key={solicitud.id} className="">
-              {solicitud.state === 1 ? (
-                <div key={solicitud.id} className="publication-card">
-                  <div className="publication-header">
-                    <span className="amount-tag">
-                      RD$ {Number(solicitud.amount).toLocaleString()}
-                    </span>
-                    <span className={`status-badge ${solicitud.state}`}>
-                      {solicitud.state == 1 ? "Pendiente" : "Aceptada"}
-                    </span>
-                  </div>
-                  <p>{solicitud.reason}</p>
-                  <p className="publication-meta">
-                    Publicada el{" "}
-                    {new Date(solicitud.created_at).toLocaleDateString("es-DO")}
-                  </p>
+          publications.map((solicitud) => {
+            const isPending = String(solicitud.state) === "1";
+
+            return (
+              <div key={solicitud.id} className="publication-card">
+                <div className="publication-header">
+                  <span className="amount-tag">
+                    RD$ {Number(solicitud.amount).toLocaleString()}
+                  </span>
+                  <span className={`status-badge ${solicitud.state}`}>
+                    {isPending ? "Pendiente" : "Aceptada"}
+                  </span>
                 </div>
-              ) : (
-                <div className=""></div>
-              )}
-            </div>
-          ))
+                <p>{solicitud.reason}</p>
+                <p className="publication-meta">
+                  Publicada el{" "}
+                  {new Date(solicitud.created_at).toLocaleDateString("es-DO")}
+                </p>
+              </div>
+            );
+          })
         )}
       </section>
       <div className="offers-container">
@@ -292,23 +288,37 @@ function ClientDashboard({ user }) {
 
                 <div className="offer-footer">
                   <span className="type-tag">{prestamo.tipo}</span>
-                  <Link
-                    to="/show-lender-conditions"
-                    state={{
-                      lender_conditions_id: prestamo.lender_conditions_id,
-                      lender_user_id: prestamo.lender_user_id,
-                      client_user_id: user.id,
-                    }}
-                    className="btn-action"
-                  >
-                    Ver condiciones del préstamo
-                  </Link>
+                  {prestamo.state === 2 ? (
+                    <div className="">
+                      <p>Visita programada</p>
+                    </div>
+                  ) : (
+                    <div>
+                      {prestamo.state === 3 && (
+                        <div className="status-active">
+                          <strong>Préstamo activo</strong>
+                        </div>
+                      )}
+                      <button
+                        className="btn-action"
+                        onClick={() => setModalConditionId(prestamo.lender_conditions_id)}
+                      >
+                        Ver condiciones del préstamo
+                      </button>
+                    </div>
+                  )}
                 </div>
               </div>
             ))
           )}
         </div>
       </div>
+      {modalConditionId && (
+        <LenderConditionsModal
+          lenderConditionsId={modalConditionId}
+          onClose={() => setModalConditionId(null)}
+        />
+      )}
     </div>
   );
 }

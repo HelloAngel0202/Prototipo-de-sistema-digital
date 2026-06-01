@@ -51,6 +51,28 @@ const LenderConditions = () => {
     formData.pay_days
   ]);
 
+  useEffect(() => {
+    const fetchRequestAmount = async () => {
+      if (!request_id) return;
+      try {
+        const response = await axios.get(
+          `http://localhost:3001/users/get-client-request?request_id=${request_id}`,
+        );
+        const amount = response.data?.amount;
+        if (amount != null) {
+          setFormData((prev) => ({
+            ...prev,
+            approved_amount: prev.approved_amount || amount,
+          }));
+        }
+      } catch (error) {
+        console.error("Error obteniendo monto solicitado del cliente:", error);
+      }
+    };
+
+    fetchRequestAmount();
+  }, [request_id]);
+
   // Manejador universal de cambios en los inputs para evitar bloqueos al escribir
   const handleInputChange = (e) => {
     const { name, value } = e.target;

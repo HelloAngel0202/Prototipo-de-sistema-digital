@@ -21,10 +21,6 @@ const createLenderConditions = async (req, res) => {
     notification_client_id,
     pay_days,
   } = req.body;
-  console.log(
-    "Datos recibidos para crear condiciones del prestamista:",
-    req.body,
-  );
   let lenderCondition = "";
   try {
     if (
@@ -50,10 +46,7 @@ const createLenderConditions = async (req, res) => {
         .status(400)
         .json({ message: "Todos los campos son requeridos" });
     }
-    console.log(
-      "Datos recibidos para crear condiciones del prestamista:",
-      req.body,
-    );
+
     db.query(
       "INSERT INTO lender_conditions (request_id, lender_id, approved_amount, interest, interest_type, rate_revision_period, amortization_system, payment_frequency,fees_count, estimated_fee_amount, closing_costs, late_fee_percentage, message, pay_days, expiration_date, state, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
       [
@@ -99,10 +92,8 @@ const createLenderConditions = async (req, res) => {
             }
 
             db.query(
-              "INSERT INTO loans (client_user_id, lender_user_id, lender_conditions_id, state, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?)",
+              "INSERT INTO loans (lender_conditions_id, state, created_at, updated_at) VALUES (?, ?, ?, ?)",
               [
-                notification_client_id,
-                lender_id,
                 lenderCondition,
                 1,
                 new Date(),
@@ -179,12 +170,23 @@ const showLenderConditions = async (req, res) => {
 
     const sql = `
     SELECT 
-  lc.*, 
-  l.name AS lender_name, 
-  l.profile_image AS profile_image
-FROM lender_conditions lc
-LEFT JOIN lender l ON lc.lender_id = l.id
-WHERE lc.id = ?;
+      lc.*, 
+      l.name AS lender_name, 
+      l.profile_image AS profile_image,
+      l.email AS lender_email,
+      l.address AS lender_address,
+      l.phone AS lender_phone,
+      l.second_phone AS lender_second_phone,
+      l.representante AS lender_representative,
+      l.nacionalidad AS lender_nacionalidad,
+      l.estado_civil AS lender_estado_civil,
+      l.sexo AS lender_sexo,
+      l.type_documente AS lender_type_documente,
+      l.documento AS lender_documento
+    FROM lender_conditions lc
+      LEFT JOIN users u ON lc.lender_id = u.id
+      LEFT JOIN lender l ON u.information_id = l.id
+    WHERE lc.id = ?;
 
     `;
 
@@ -206,6 +208,66 @@ WHERE lc.id = ?;
     });
   } catch (error) {
     console.error("Error en obtener condiciones del prestamista:", error);
+    res.status(500).send("Error interno del servidor");
+  }
+};
+
+const registerLoan = async (req, res) => {
+  try {
+    const {
+      lender_conditions_id,
+      notification_id,
+      client_request_id,
+      lender_id,
+      client_id,
+    } = req.body;
+
+    if (!lender_conditions_id) {
+      return res.status(400).json({ message: "El ID de las condiciones es requerido" });
+    }
+
+    db.query(
+      "SELECT * FROM loans WHERE lender_conditions_id = ? LIMIT 1",
+      [lender_conditions_id],
+      (selectErr, loanResults) => {
+        if (selectErr) {
+          console.error("Error al consultar loan:", selectErr);
+          return res.status(500).json({ message: "Error al consultar el préstamo" });
+        }
+
+        if (loanResults.length === 0) {
+          return res.status(404).json({ message: "Préstamo no encontrado para estas condiciones" });
+        }
+
+        const now = new Date();
+        db.query(
+          "UPDATE loans SET state = 3, updated_at = ? WHERE lender_conditions_id = ?",
+          [now, lender_conditions_id],
+          (updateErr) => {
+            if (updateErr) {
+              console.error("Error al actualizar loan:", updateErr);
+              return res.status(500).json({ message: "Error al registrar el préstamo" });
+            }
+
+            if (notification_id) {
+              db.query(
+                "UPDATE notifications SET state = 3 WHERE id = ?",
+                [notification_id],
+                (notifErr) => {
+                  if (notifErr) {
+                    console.error("Error al actualizar notification:", notifErr);
+                  }
+                },
+              );
+            }
+
+            return res.status(200).json({ message: "Préstamo registrado y activo" });
+          },
+        );
+      },
+    );
+  } catch (error) {
+    console.error("Error en registrar préstamo:", error);
     res.status(500).send("Error interno del servidor");
   }
 };
@@ -288,7 +350,6 @@ const getRequestInfo = async (req, res) => {
       });
     }
     // Enviar solicitud al cliente
-    console.log("Datos recibidos para obtener información de la solicitud:", req.query);
     db.query(
       "INSERT INTO notifications (client_request_id, lender_id, client_id, created_at, updated_at, state) VALUES (?, ?, ?, ?, ?, ?)",
       [client_request_id, lender_id, client_id, new Date(), new Date(), 1],
@@ -312,6 +373,33 @@ const getRequestInfo = async (req, res) => {
   }
 };
 
+const getLenderConditionsByRequest = async (req, res) => {
+  try {
+    const { request_id, lender_id } = req.query;
+    if (!request_id || !lender_id) {
+      return res.status(400).json({ message: 'request_id and lender_id are required' });
+    }
+
+    db.query(
+      'SELECT * FROM lender_conditions WHERE request_id = ? AND lender_id = ? LIMIT 1',
+      [request_id, lender_id],
+      (err, results) => {
+        if (err) {
+          console.error('Error fetching lender_conditions by request:', err);
+          return res.status(500).json({ message: 'Error fetching lender conditions' });
+        }
+        if (!results || results.length === 0) {
+          return res.status(404).json({ message: 'No lender_conditions found' });
+        }
+        return res.status(200).json(results[0]);
+      },
+    );
+  } catch (error) {
+    console.error('Error in getLenderConditionsByRequest:', error);
+    res.status(500).send('Error interno del servidor');
+  }
+};
+
 module.exports = {
   publications,
   createLenderConditions,
@@ -319,4 +407,6 @@ module.exports = {
   getLenderInfo,
   showLenderConditions,
   getClientRequest,
+  registerLoan,
+  getLenderConditionsByRequest,
 };

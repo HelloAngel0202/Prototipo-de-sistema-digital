@@ -17,6 +17,8 @@ const ShowLenderConditions = () => {
     name: "",
     logo: "https://upload.wikimedia.org/wikipedia/commons/0/06/Popular_Bank_logo.svg",
     phone: "(809) 573-2121",
+    email: "",
+    address: "",
   });
 
   useEffect(() => {
@@ -47,9 +49,14 @@ const ShowLenderConditions = () => {
 
           setLenderConditions(data);
 
-          if (data.lender_name) {
-            setBankInfo((prev) => ({ ...prev, name: data.lender_name }));
-          }
+          setBankInfo((prev) => ({
+            ...prev,
+            name: data.lender_name || prev.name,
+            logo: data.profile_image || prev.logo,
+            phone: data.lender_phone || data.lender_second_phone || prev.phone,
+            email: data.lender_email || prev.email || "",
+            address: data.lender_address || prev.address || "",
+          }));
 
           // Generar el calendario con los datos limpios recibidos
           generateClientSchedule(data);
@@ -275,12 +282,24 @@ const ShowLenderConditions = () => {
                 <span>¿Tienes dudas sobre los requisitos? Comunícate con el banco al: </span>
                 <strong className="bank-phone">{bankInfo.phone}</strong>
               </div>
+              {bankInfo.email && (
+                <div className="bank-contact-footer">
+                  <span>Correo electrónico:</span>
+                  <strong>{bankInfo.email}</strong>
+                </div>
+              )}
+              {bankInfo.address && (
+                <div className="bank-contact-footer">
+                  <span>Dirección:</span>
+                  <strong>{bankInfo.address}</strong>
+                </div>
+              )}
             </div>
 
             <div className="button-group">
               <button
                 className="accept-btn"
-                onClick={() => acceptOffer(lenderConditions)}
+                onClick={() =>  (acceptOffer(lenderConditions))}
               >
                 Confirmar visita
               </button>

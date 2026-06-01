@@ -327,3 +327,62 @@
     padding: 12px;
   }
 }
+
+/* Modal básico para mostrar condiciones en overlays */
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 2000;
+  padding: 20px;
+}
+
+.modal-content {
+  background: #fff;
+  border-radius: 10px;
+  max-width: 950px;
+  width: 100%;
+  max-height: 90vh;
+  overflow: auto;
+  padding: 24px;
+  box-shadow: 0 8px 40px rgba(2,6,23,0.35);
+}
+
+.modal-close {
+  position: absolute;
+  right: 28px;
+  top: 18px;
+  background: transparent;
+  border: none;
+  font-size: 24px;
+  cursor: pointer;
+}
+
+.status-active {
+  background: #e6f8ee;
+  color: #0b6b3a;
+  padding: 6px 10px;
+  border-radius: 6px;
+  display: inline-block;
+  margin-right: 8px;
+}
+
+.btn-action {
+  background: #2b6cb0;
+  color: #fff;
+  border: none;
+  padding: 8px 12px;
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+.btn-waiting {
+  background: #f1f5f9;
+  color: #7f8c8d;
+  border: none;
+  padding: 8px 12px;
+  border-radius: 6px;
+}

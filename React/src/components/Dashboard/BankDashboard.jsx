@@ -1,6 +1,7 @@
 import "./BankDashboard.css";
 import axios from "axios";
 import { useState, useEffect } from "react";
+import LenderConditionsModal from "../LenderConditions/LenderConditionsModal";
 import { useNavigate, Link } from "react-router-dom";
 import Swal from "sweetalert2";
 
@@ -122,6 +123,33 @@ function BankDashboard({ user }) {
     }
   };
 
+  const [modalConditionId, setModalConditionId] = useState(null);
+
+  const openConditionsForNotification = async (notification) => {
+    try {
+      if (notification.lender_conditions_id) {
+        setModalConditionId(notification.lender_conditions_id);
+        return;
+      }
+
+      // Intentar resolver vía endpoint si falta el id
+      const reqId = notification.client_request_id || notification.request_id;
+      const res = await axios.get(
+        `http://localhost:3001/users/get-lender-conditions-by-request?request_id=${reqId}&lender_id=${user.id}`,
+      );
+      if (res.data && res.data.id) {
+        setModalConditionId(res.data.id);
+      } else if (res.data && res.data.lender_conditions_id) {
+        setModalConditionId(res.data.lender_conditions_id);
+      } else {
+        Swal.fire({ title: "No encontrado", text: "No se encontró condiciones para esta solicitud.", icon: "warning" });
+      }
+    } catch (err) {
+      console.error("Error resolviendo condiciones:", err);
+      Swal.fire({ title: "Error", text: "No se pudo obtener las condiciones.", icon: "error" });
+    }
+  };
+
   useEffect(() => {
     const obtenerSolicitudes = async () => {
       try {
@@ -192,64 +220,108 @@ function BankDashboard({ user }) {
       <section className="accepted-request-notice">
         <div className="accepted-request-card">
           <h2>Solicitudes enviadas</h2>
-          {notifications.map((notification) => (
-            <div key={notification.id} className="request-feed-card">
-              <div className="card-top">
-                <span className="amount-tag">
-                  {notification.state == 2 ? (<h2>{notification.client_name}</h2>) : (
-                    <h2>Cliente anónimo</h2>
-                  )}
+          {notifications.length === 0 ? (
+            <p className="no-notifications">No has enviado solicitudes aún.</p>
+          ) : (
+            notifications.map((notification) => (
+              <div key={notification.id} className="request-feed-card">
+                <div className="card-top">
+                  <span className="amount-tag">
+                    {notification.state == 2 || notification.state == 3 ? (<h2>{notification.client_name}</h2>) : (
+                      <h2>Cliente anónimo</h2>
+                    )}
 
-                </span>
-                <span className="amount-tag">
-                  <p>
-                    {notification.state == 2
-                      ? "Ya puedes ver la información del cliente"
-                      : "Pendiente"}
-                  </p>
-                </span>
-                <div>
-                  {notification.state == 2 ? (
-                    <div>
-                      <Link
-                        to="/client-info"
-                        state={{
-                          lender_id: user.id,
-                          request_id:
-                            notification.client_request_id ||
-                            notification.request_id ||
-                            notification.id,
-                          notification_id: notification.id,
-                          client_id: notification.client_id,
-                        }}
-                        className="btn-action"
-                      >
-                        Ver información
-                      </Link>
-                    </div>
-                  ) : (
-                    <div>
-                      <button disabled className="btn-waiting">
-                        {" "}
-                        Espera a que el cliente acepte su solicitud
-                      </button>
-                    </div>
-                  )}
+                  </span>
+                  <span className="amount-tag">
+                    <p>
+                      {notification.state == 2
+                        ? "Ya puedes ver la información del cliente"
+                        : notification.state == 3
+                        ? "Préstamo activo"
+                        : "Pendiente"}
+                    </p>
+                  </span>
+                  <div>
+                    {notification.state == 2 ? (
+                      <div>
+                        <Link
+                          to="/client-info"
+                          state={{
+                            lender_id: user.id,
+                            request_id:
+                              notification.client_request_id ||
+                              notification.request_id ||
+                              notification.id,
+                            notification_id: notification.id,
+                            client_id: notification.client_id,
+                          }}
+                          className="btn-action"
+                        >
+                          Ver información
+                        </Link>
+                      </div>
+                    ) : (
+                      notification.state == 0 ? (
+                        <div className="">
+                          <p>Visita programada</p>
+                          <button
+                            onClick={() =>
+                              navigate("/confirm-loan", {
+                                state: {
+                                  lender_conditions_id:
+                                    notification.lender_conditions_id,
+                                  notification_id: notification.id,
+                                  client_request_id: notification.client_request_id,
+                                  client_id: notification.client_id,
+                                  lender_id: user.id,
+                                },
+                              })
+                            }
+                          >
+                            Confirmar préstamo
+                          </button>
+                        </div>
+                      ) : (
+                        <div className="">
+                          <div>
+                            {notification.state == 3 ? (
+                              <>
+                                <div className="status-active">
+                                  <strong>Préstamo activo</strong>
+                                </div>
+                                <button
+                                  className="btn-action"
+                                  onClick={() => openConditionsForNotification(notification)}
+                                >
+                                  Ver condiciones actuales
+                                </button>
+                              </>
+                            ) : (
+                              <button disabled className="btn-waiting">
+                                Es espera a que el cliente acepte su solicitud
+                              </button>
+                            )}
+                          </div>
+                        </div>
+                      )
+                    )}
+                  </div>
                 </div>
+                <p className="publication-meta">
+                  Publicada el{" "}
+                  {new Date(notification.created_at).toLocaleDateString("es-DO")}
+                </p>
               </div>
-              <p className="publication-meta">
-                Publicada el{" "}
-                {new Date(notification.created_at).toLocaleDateString("es-DO")}
-              </p>
-            </div>
-          ))}
-          <p style={{ marginTop: "20px", fontStyle: "italic", color: "#666" }}>
-            Solicitud de información aceptada, el cliente ha permitido el acceso
-            a su información financiera. Puedes revisar los detalles en la
-            sección de solicitudes aceptadas.
-          </p>
+            ))
+          )}
         </div>
       </section>
+      {modalConditionId && (
+        <LenderConditionsModal
+          lenderConditionsId={modalConditionId}
+          onClose={() => setModalConditionId(null)}
+        />
+      )}
     </div>
   );
 }

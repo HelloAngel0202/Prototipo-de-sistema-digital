@@ -40,6 +40,8 @@ router.get("/lender-info", Lender.getLenderInfo);
 router.get("/accept-offer", borrower.acceptOffer);
 router.get("/sended-notifications", borrower.sendedNotifications);
 router.post("/lender-conditions", Lender.createLenderConditions);
+router.post("/register-loan", Lender.registerLoan);
+router.get("/get-lender-conditions-by-request", Lender.getLenderConditionsByRequest);
 router.get("/my-loans", borrower.myLoans);
 router.get("/show-lender-conditions", Lender.showLenderConditions);
 router.get("/accept-access", borrower.acceptAccess);

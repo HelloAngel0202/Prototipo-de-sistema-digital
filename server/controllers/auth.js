@@ -760,7 +760,6 @@ const checkClientData = (req, res) => {
         },
       );
     } else if (role === "prestamista") {
-      console.log("Verificando datos del prestamista con ID:", clid); // Log para depuración
       bd.query(
         `SELECT 
     type_documente,

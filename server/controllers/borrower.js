@@ -27,9 +27,14 @@ const sendedNotifications = async (req, res) => {
     const { lender_id } = req.query;
     const query = `
       SELECT n.*, c.first_name AS client_name
+      , lc.id AS lender_conditions_id
+      , l.id AS loan_id
       FROM notifications n
       LEFT JOIN users u ON n.client_id = u.id
       LEFT JOIN client c ON u.information_id = c.id
+      LEFT JOIN client_request cr ON n.client_request_id = cr.id
+      LEFT JOIN lender_conditions lc ON lc.request_id = cr.id AND lc.lender_id = n.lender_id
+      LEFT JOIN loans l ON l.lender_conditions_id = lc.id
       WHERE n.lender_id = ?
     `;
     const params = [lender_id];
@@ -70,7 +75,15 @@ const myLoans = async (req, res) => {
   try {
     const { user_id } = req.query;
 
-    const query = "SELECT l.*, len.name AS bank_name FROM loans l INNER JOIN users u ON l.lender_user_id = u.id INNER JOIN lender len ON u.information_id = len.id WHERE l.client_user_id = ?;";
+    const query = `
+      SELECT l.*, lc.lender_id AS lender_user_id, len.name AS bank_name
+      FROM loans l
+      INNER JOIN lender_conditions lc ON l.lender_conditions_id = lc.id
+      INNER JOIN users u ON lc.lender_id = u.id
+      INNER JOIN lender len ON u.information_id = len.id
+      INNER JOIN client_request cr ON lc.request_id = cr.id
+      WHERE cr.user_id = ?
+    `;
     const params = [user_id];
 
     db.query(query, params, (err, results) => {

@@ -11,6 +11,7 @@ import BankDashboard from "./components/Dashboard/BankDashboard";
 import LoanRequestForm from "./components/LoanRequest/LoanRequestForm";
 import LenderConditions from "./components/LenderConditions/LenderConditions";
 import ShowLenderConditions from "./components/LenderConditions/ShowLenderConditions";
+import ConfirmLoan from "./components/LenderConditions/ConfirmLoan";
 import ShowClient from "./components/borrowerConditions/borrowerConditions";
 import ClientInfo from "./components/borrowerConditions/ClientInfo";
 
@@ -76,6 +77,7 @@ function App() {
             user ? <Navigate to="/dashboard" /> : <Login setUser={setUser} />
           }
         />
+        <Route path="/confirm-loan" element={<ConfirmLoan />} />
         <Route
           path="/register"
           element={
