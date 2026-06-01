@@ -386,3 +386,32 @@
   padding: 8px 12px;
   border-radius: 6px;
 }
+
+/* Payment form styles */
+.payment-form {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 12px;
+  margin-top: 16px;
+}
+.form-row {
+  display: flex;
+  flex-direction: column;
+}
+.form-row label {
+  font-weight: 600;
+  margin-bottom: 6px;
+  color: #334155;
+}
+.form-input, .form-textarea {
+  padding: 10px 12px;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  font-size: 14px;
+}
+.form-textarea { min-height: 80px; resize: vertical; }
+.button-row { display:flex; gap:10px; justify-content:flex-end; margin-top:6px }
+
+/* Small enhancements */
+.modal-content h3 { margin-top: 0; color: #1e293b }
+.form-input:focus, .form-textarea:focus { outline: none; box-shadow: 0 0 0 3px rgba(59,130,246,0.12); border-color: #3b82f6 }

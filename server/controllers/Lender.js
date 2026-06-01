@@ -339,6 +339,146 @@ const getLenderInfo = async (req, res) => {
   }
 };
 
+const registerPayment = async (req, res) => {
+  try {
+    const { loan_id, lender_conditions_id, amount, payment_method, notes } = req.body;
+
+    if (!amount || (!loan_id && !lender_conditions_id)) {
+      return res.status(400).json({ message: 'loan_id or lender_conditions_id and amount are required' });
+    }
+
+    // Resolve loan_id if only lender_conditions_id was provided
+    const resolveLoanQuery = loan_id
+      ? 'SELECT l.*, lc.approved_amount, lc.lender_id, lc.request_id FROM loans l JOIN lender_conditions lc ON l.lender_conditions_id = lc.id WHERE l.id = ? LIMIT 1'
+      : 'SELECT l.*, lc.approved_amount, lc.lender_id, lc.request_id FROM loans l JOIN lender_conditions lc ON l.lender_conditions_id = lc.id WHERE lc.id = ? LIMIT 1';
+
+    const resolveParams = loan_id ? [loan_id] : [lender_conditions_id];
+
+    db.query(resolveLoanQuery, resolveParams, (err, loanResults) => {
+      if (err) {
+        console.error('Error resolving loan for payment:', err);
+        return res.status(500).json({ message: 'Error resolving loan' });
+      }
+
+      if (!loanResults || loanResults.length === 0) {
+        return res.status(404).json({ message: 'Loan not found for provided identifiers' });
+      }
+
+      const loan = loanResults[0];
+      const targetLoanId = loan.id;
+      const lenderId = loan.lender_id;
+      const approvedAmount = parseFloat(loan.approved_amount || 0);
+
+      // Get client id from client_request
+      db.query(
+        'SELECT user_id AS client_id FROM client_request WHERE id = ?',
+        [loan.request_id],
+        (err2, crRes) => {
+          if (err2) {
+            console.error('Error fetching client_request:', err2);
+            return res.status(500).json({ message: 'Error fetching client info' });
+          }
+
+          const clientId = crRes && crRes[0] ? crRes[0].client_id : null;
+
+          db.query(
+            'INSERT INTO payments (loan_id, lender_id, client_id, amount, payment_method, notes, payment_date, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
+            [targetLoanId, lenderId, clientId, amount, payment_method || null, notes || null, new Date(), new Date()],
+            (insertErr, insertRes) => {
+              if (insertErr) {
+                console.error('Error inserting payment:', insertErr);
+                return res.status(500).json({ message: 'Error recording payment' });
+              }
+
+              // Recalculate paid_amount
+              db.query(
+                'SELECT IFNULL(SUM(amount), 0) AS paid_total FROM payments WHERE loan_id = ?',
+                [targetLoanId],
+                (sumErr, sumRes) => {
+                  if (sumErr) {
+                    console.error('Error calculating paid total:', sumErr);
+                  }
+
+                  const paidTotal = sumRes && sumRes[0] ? parseFloat(sumRes[0].paid_total) : 0;
+
+                  db.query(
+                    'UPDATE loans SET paid_amount = ?, updated_at = ? WHERE id = ?',
+                    [paidTotal, new Date(), targetLoanId],
+                    (updErr) => {
+                      if (updErr) {
+                        console.error('Error updating loan paid_amount:', updErr);
+                      }
+
+                      // If fully paid, mark loan state to 4 (pagado)
+                      if (approvedAmount > 0 && paidTotal >= approvedAmount) {
+                        db.query('UPDATE loans SET state = ? WHERE id = ?', [4, targetLoanId], (sErr) => {
+                          if (sErr) console.error('Error setting loan paid state:', sErr);
+                        });
+                      }
+
+                      return res.status(201).json({ message: 'Payment registered', id: insertRes.insertId });
+                    },
+                  );
+                },
+              );
+            },
+          );
+        },
+      );
+    });
+  } catch (error) {
+    console.error('Error in registerPayment:', error);
+    res.status(500).send('Error interno del servidor');
+  }
+};
+
+const getPaymentsByCondition = async (req, res) => {
+  try {
+    const { lender_conditions_id } = req.query;
+    if (!lender_conditions_id) return res.status(400).json({ message: 'lender_conditions_id is required' });
+
+    db.query(
+      `SELECT p.*, l.lender_conditions_id, lc.request_id, lc.lender_id FROM payments p
+       JOIN loans l ON p.loan_id = l.id
+       JOIN lender_conditions lc ON l.lender_conditions_id = lc.id
+       WHERE lc.id = ? ORDER BY p.payment_date DESC`,
+      [lender_conditions_id],
+      (err, results) => {
+        if (err) {
+          console.error('Error fetching payments by condition:', err);
+          return res.status(500).json({ message: 'Error fetching payments' });
+        }
+        return res.status(200).json(results);
+      },
+    );
+  } catch (error) {
+    console.error('Error in getPaymentsByCondition:', error);
+    res.status(500).send('Error interno del servidor');
+  }
+};
+
+const getPaymentsByClient = async (req, res) => {
+  try {
+    const { client_id } = req.query;
+    if (!client_id) return res.status(400).json({ message: 'client_id is required' });
+
+    db.query(
+      'SELECT p.* FROM payments p WHERE p.client_id = ? ORDER BY p.payment_date DESC',
+      [client_id],
+      (err, results) => {
+        if (err) {
+          console.error('Error fetching payments by client:', err);
+          return res.status(500).json({ message: 'Error fetching payments' });
+        }
+        return res.status(200).json(results);
+      },
+    );
+  } catch (error) {
+    console.error('Error in getPaymentsByClient:', error);
+    res.status(500).send('Error interno del servidor');
+  }
+};
+
 const getRequestInfo = async (req, res) => {
   try {
     const { client_request_id, lender_id, client_id } = req.query;
@@ -409,4 +549,7 @@ module.exports = {
   getClientRequest,
   registerLoan,
   getLenderConditionsByRequest,
+  registerPayment,
+  getPaymentsByCondition,
+  getPaymentsByClient,
 };

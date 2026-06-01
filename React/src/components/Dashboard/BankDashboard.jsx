@@ -2,6 +2,7 @@ import "./BankDashboard.css";
 import axios from "axios";
 import { useState, useEffect } from "react";
 import LenderConditionsModal from "../LenderConditions/LenderConditionsModal";
+import LenderPaymentsModal from "../LenderConditions/LenderPaymentsModal";
 import { useNavigate, Link } from "react-router-dom";
 import Swal from "sweetalert2";
 
@@ -124,6 +125,7 @@ function BankDashboard({ user }) {
   };
 
   const [modalConditionId, setModalConditionId] = useState(null);
+  const [paymentsModalConditionId, setPaymentsModalConditionId] = useState(null);
 
   const openConditionsForNotification = async (notification) => {
     try {
@@ -289,12 +291,24 @@ function BankDashboard({ user }) {
                                 <div className="status-active">
                                   <strong>Préstamo activo</strong>
                                 </div>
-                                <button
-                                  className="btn-action"
-                                  onClick={() => openConditionsForNotification(notification)}
-                                >
-                                  Ver condiciones actuales
-                                </button>
+                                <div style={{ display: 'inline-flex', gap: 8 }}>
+                                  <button
+                                    className="btn-action"
+                                    onClick={() => openConditionsForNotification(notification)}
+                                  >
+                                    Ver condiciones actuales
+                                  </button>
+                                  <button
+                                    className="btn-action"
+                                    onClick={() => setPaymentsModalConditionId({
+                                      lender_conditions_id: notification.lender_conditions_id,
+                                      request_id: notification.client_request_id || notification.request_id,
+                                      lender_id: user.id,
+                                    })}
+                                  >
+                                    Registrar pago
+                                  </button>
+                                </div>
                               </>
                             ) : (
                               <button disabled className="btn-waiting">
@@ -320,6 +334,12 @@ function BankDashboard({ user }) {
         <LenderConditionsModal
           lenderConditionsId={modalConditionId}
           onClose={() => setModalConditionId(null)}
+        />
+      )}
+      {paymentsModalConditionId && (
+        <LenderPaymentsModal
+          lenderConditionsId={paymentsModalConditionId}
+          onClose={() => setPaymentsModalConditionId(null)}
         />
       )}
     </div>

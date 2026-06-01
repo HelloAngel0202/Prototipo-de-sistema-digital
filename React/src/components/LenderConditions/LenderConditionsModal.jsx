@@ -6,6 +6,7 @@ const LenderConditionsModal = ({ lenderConditionsId, onClose }) => {
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [schedule, setSchedule] = useState([]);
+  const [payments, setPayments] = useState([]);
 
   useEffect(() => {
     const fetch = async () => {
@@ -17,6 +18,13 @@ const LenderConditionsModal = ({ lenderConditionsId, onClose }) => {
         const payload = Array.isArray(res.data) ? res.data[0] : res.data;
         setData(payload);
         generateSchedule(payload);
+        // fetch payments
+        try {
+          const payRes = await axios.get(`http://localhost:3001/users/payments-by-condition?lender_conditions_id=${lenderConditionsId}`);
+          setPayments(Array.isArray(payRes.data) ? payRes.data : []);
+        } catch (pe) {
+          console.error('Error fetching payments for condition:', pe);
+        }
       } catch (err) {
         console.error("Error fetching conditions in modal:", err);
       } finally {
@@ -128,6 +136,34 @@ const LenderConditionsModal = ({ lenderConditionsId, onClose }) => {
                 </table>
               </div>
             )}
+
+            <div style={{ marginTop: 18 }}>
+              <h4>Historial de Pagos</h4>
+              {payments.length === 0 ? (
+                <p>No se han registrado pagos aún.</p>
+              ) : (
+                <table className="client-amortization-table">
+                  <thead>
+                    <tr>
+                      <th>Fecha</th>
+                      <th>Monto</th>
+                      <th>Método</th>
+                      <th>Notas</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {payments.map((p) => (
+                      <tr key={p.id}>
+                        <td>{new Date(p.payment_date).toLocaleString()}</td>
+                        <td>RD$ {parseFloat(p.amount).toLocaleString(undefined, { minimumFractionDigits: 2 })}</td>
+                        <td>{p.payment_method || '-'}</td>
+                        <td>{p.notes || '-'}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              )}
+            </div>
           </div>
         ) : (
           <p>No se encontraron condiciones para este préstamo.</p>

@@ -159,7 +159,8 @@ CREATE TABLE `loans` (
   `state` int NOT NULL,
   `created_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP,
   `updated_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
-  ,`activated_at` datetime DEFAULT NULL
+    ,`activated_at` datetime DEFAULT NULL,
+    `paid_amount` decimal(12,2) DEFAULT '0.00'
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- --------------------------------------------------------
@@ -177,6 +178,24 @@ CREATE TABLE `notifications` (
   `state` varchar(50) NOT NULL,
   `client_request_id` int NOT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+
+-- --------------------------------------------------------
+
+--
+-- Table structure for table `payments`
+--
+
+CREATE TABLE `payments` (
+  `id` int NOT NULL,
+  `loan_id` int NOT NULL,
+  `lender_id` int DEFAULT NULL,
+  `client_id` int DEFAULT NULL,
+  `amount` decimal(12,2) NOT NULL,
+  `payment_method` varchar(100) DEFAULT NULL,
+  `notes` text,
+  `payment_date` datetime NOT NULL,
+  `created_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- --------------------------------------------------------
 
@@ -290,6 +309,14 @@ ALTER TABLE `users`
   ADD PRIMARY KEY (`id`);
 
 --
+-- Indexes for table `payments`
+--
+
+ALTER TABLE `payments`
+  ADD PRIMARY KEY (`id`),
+  ADD KEY `fk_payments_loan` (`loan_id`);
+
+--
 -- AUTO_INCREMENT for dumped tables
 --
 
@@ -348,6 +375,13 @@ ALTER TABLE `users`
   MODIFY `id` int NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=3;
 
 --
+-- AUTO_INCREMENT for table `payments`
+--
+
+ALTER TABLE `payments`
+  MODIFY `id` int NOT NULL AUTO_INCREMENT;
+
+--
 -- Constraints for dumped tables
 --
 
@@ -377,6 +411,13 @@ ALTER TABLE `notifications`
   ADD CONSTRAINT `fk_notifications_client` FOREIGN KEY (`client_id`) REFERENCES `users` (`id`) ON DELETE CASCADE ON UPDATE CASCADE,
   ADD CONSTRAINT `fk_notifications_lender` FOREIGN KEY (`lender_id`) REFERENCES `users` (`id`) ON DELETE CASCADE ON UPDATE CASCADE,
   ADD CONSTRAINT `fk_notifications_request` FOREIGN KEY (`client_request_id`) REFERENCES `client_request` (`id`) ON DELETE CASCADE ON UPDATE CASCADE;
+
+--
+-- Constraints for table `payments`
+--
+
+ALTER TABLE `payments`
+  ADD CONSTRAINT `fk_payments_loan` FOREIGN KEY (`loan_id`) REFERENCES `loans` (`id`) ON DELETE CASCADE ON UPDATE CASCADE;
 
 --
 -- Constraints for table `rating`
