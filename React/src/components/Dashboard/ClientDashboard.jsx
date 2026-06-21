@@ -1,5 +1,5 @@
 import "./ClientDashboard.css";
-import { Link } from "react-router-dom";
+import { useNavigate, Link } from "react-router-dom";
 import OfferList from "../Offers/OfferList";
 import axios from "axios";
 import { useEffect, useState, useMemo } from "react";
@@ -26,17 +26,99 @@ function ClientDashboard({ user }) {
   const [lenderInfo, setLenderInfo] = useState({});
   const [loading, setLoading] = useState(true);
   const [prestamos, setPrestamos] = useState([]);
+  const [datachek, setDatachek] = useState([]);
   const [modalConditionId, setModalConditionId] = useState(null);
-
+  const navigate = useNavigate();
 
   const rawToken = localStorage.getItem("token");
   const payload = useMemo(() => parseJwt(rawToken), [rawToken]);
   const clid = payload?.clid;
 
+  const showProfileReminder = async () => {
+    const result = await Swal.fire({
+      title: "🚀 ¡Ya casi estás listo!",
+      html: `
+      <div style="text-align:center">
+        <div style="font-size:60px;margin-bottom:10px;">🧑‍💼</div>
+        <p>
+          Ya estás más cerca de obtener nuevas oportunidades de préstamo.
+        </p>
+        <p>
+          Solo falta completar tu información personal para que podamos
+          conectarte con más opciones de financiamiento.
+        </p>
+      </div>
+    `,
+      icon: "info",
+      showCancelButton: true,
+      confirmButtonText: "Completar mis datos",
+      cancelButtonText: "Más tarde",
+    });
 
+    if (result.isConfirmed) {
+      navigate("/profile");
+    }
+  };
 
-  // resto del código...
+  const validateProfileData = async () => {
+    try {
+      const check = await axios.get(
+        "http://localhost:3001/users/checkClientData",
+        {
+          params: {
+            id: payload.id,
+            clid: payload.clid,
+            role: payload.role,
+          },
+          headers: {
+            Authorization: `Bearer ${rawToken}`,
+          },
+        },
+      );
 
+      if (!check.data) {
+        const result = await Swal.fire({
+          title: "🚀 ¡Ya casi estás listo!",
+          html: `
+      <div style="text-align:center">
+        <div style="font-size:60px;margin-bottom:10px;">🧑‍💼</div>
+        <p>
+          Ya estás más cerca de obtener nuevas oportunidades de préstamo.
+        </p>
+        <p>
+          Solo falta completar tu información personal para que podamos
+          conectarte con más opciones de financiamiento.
+        </p>
+      </div>
+    `,
+          icon: "info",
+          showCancelButton: true,
+          confirmButtonText: "Completar mis datos",
+          cancelButtonText: "Más tarde",
+        });
+
+        if (result.isConfirmed) {
+          navigate("/profile");
+        } else {
+          setDatachek(false);
+        }
+
+        return false;
+      }
+
+      return true;
+    } catch (error) {
+      console.error("Error validando datos:", error);
+
+      Swal.fire({
+        title: "Error",
+        text: "No se pudo verificar tu información.",
+        icon: "error",
+      });
+
+      return false;
+    }
+  };
 
   const acceptAccess = (offer) => {
     try {
@@ -97,7 +179,6 @@ function ClientDashboard({ user }) {
         return;
       }
 
-
       try {
         const response = await axios.get(
           `http://localhost:3001/users/notifications?client_id=${clid}`,
@@ -122,6 +203,7 @@ function ClientDashboard({ user }) {
       }
     };
 
+    validateProfileData();
     obtenerPrestamos();
     obtenerNotificaciones();
     obtenerPublicaciones();
@@ -165,12 +247,32 @@ function ClientDashboard({ user }) {
 
   return (
     <div className="dashboard-container">
+
+       {!datachek && (
+        <div className="profile-alert">
+          <h3>⚠️ Completa tu perfil</h3>
+          <p>
+            Ya estás más cerca de obtener nuevas oportunidades de préstamo.
+            Completa tu información personal para desbloquear todas las
+            funciones.
+          </p>
+
+          <button className="btn-action" onClick={() => navigate("/profile")}>
+            Completar mis datos
+          </button>
+        </div>
+      )}
+
+
+
       <header className="dashboard-header">
         <h1>Panel de Control</h1>
         <p>
           Bienvenido de nuevo, <strong>{user.name}</strong>
         </p>
       </header>
+
+     
 
       {/* Sección de Tarjetas de Resumen */}
 
@@ -182,9 +284,15 @@ function ClientDashboard({ user }) {
             Crea una nueva solicitud anónima y recibe ofertas de bancos
             verificados.
           </p>
-          <Link to="/new-request" className="btn-action">
-            Nueva Solicitud Anónima
-          </Link>
+          {datachek ? (
+            <Link to="/new-request" className="btn-action">
+              Nueva Solicitud Anónima
+            </Link>
+          ) : (
+            <button className="btn-action" onClick={showProfileReminder}>
+              Nueva Solicitud Anónima
+            </button>
+          )}
         </div>
       </section>
 
@@ -196,7 +304,9 @@ function ClientDashboard({ user }) {
           <div className="offer-card">
             <p>No has publicado ninguna solicitud aún.</p>
             <p className="offers-subtitle">
-              Publica una solicitud para empezar a recibir propuestas de los bancos. Cuéntales un poco sobre tu necesidad de financiamiento y espera a que lleguen las ofertas.
+              Publica una solicitud para empezar a recibir propuestas de los
+              bancos. Cuéntales un poco sobre tu necesidad de financiamiento y
+              espera a que lleguen las ofertas.
             </p>
           </div>
         ) : (
@@ -301,7 +411,9 @@ function ClientDashboard({ user }) {
                       )}
                       <button
                         className="btn-action"
-                        onClick={() => setModalConditionId(prestamo.lender_conditions_id)}
+                        onClick={() =>
+                          setModalConditionId(prestamo.lender_conditions_id)
+                        }
                       >
                         Ver condiciones del préstamo
                       </button>

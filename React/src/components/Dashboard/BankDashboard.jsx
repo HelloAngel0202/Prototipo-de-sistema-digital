@@ -1,6 +1,6 @@
 import "./BankDashboard.css";
 import axios from "axios";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import LenderConditionsModal from "../LenderConditions/LenderConditionsModal";
 import LenderPaymentsModal from "../LenderConditions/LenderPaymentsModal";
 import { useNavigate, Link } from "react-router-dom";
@@ -23,7 +23,100 @@ function parseJwt(token) {
 function BankDashboard({ user }) {
   const [publications, setPublications] = useState([]);
   const [notifications, setNotifications] = useState([]);
+  const [datachek, setDatachek] = useState([]);
   const navigate = useNavigate();
+
+  const rawToken = localStorage.getItem("token");
+  const payload = useMemo(() => parseJwt(rawToken), [rawToken]);
+  const clid = payload?.clid;
+
+  //validar data
+
+  const showProfileReminder = async () => {
+    const result = await Swal.fire({
+      title: "🚀 ¡Ya casi estás listo!",
+      html: `
+      <div style="text-align:center">
+        <div style="font-size:60px;margin-bottom:10px;">🧑‍💼</div>
+        <p>
+          Ya estás más cerca de obtener nuevas oportunidades de préstamo.
+        </p>
+        <p>
+          Solo falta completar tu información personal para que podamos
+          conectarte con más opciones de financiamiento.
+        </p>
+      </div>
+    `,
+      icon: "info",
+      showCancelButton: true,
+      confirmButtonText: "Completar mis datos",
+      cancelButtonText: "Más tarde",
+    });
+
+    if (result.isConfirmed) {
+      navigate("/profile");
+    }
+  };
+
+  const validateProfileData = async () => {
+    try {
+      const check = await axios.get(
+        "http://localhost:3001/users/checkClientData",
+        {
+          params: {
+            id: payload.id,
+            clid: payload.clid,
+            role: payload.role,
+          },
+          headers: {
+            Authorization: `Bearer ${rawToken}`,
+          },
+        },
+      );
+
+      if (!check.data) {
+        const result = await Swal.fire({
+          title: "🚀 ¡Ya casi estás listo!",
+          html: `
+      <div style="text-align:center">
+        <div style="font-size:60px;margin-bottom:10px;">🧑‍💼</div>
+        <p>
+          Ya estás más cerca de obtener nuevas oportunidades de préstamo.
+        </p>
+        <p>
+          Solo falta completar tu información personal para que podamos
+          conectarte con más opciones de financiamiento.
+        </p>
+      </div>
+    `,
+          icon: "info",
+          showCancelButton: true,
+          confirmButtonText: "Completar mis datos",
+          cancelButtonText: "Más tarde",
+        });
+
+        if (result.isConfirmed) {
+          navigate("/profile");
+        } else {
+          setDatachek(false);
+        }
+
+        return false;
+      }
+
+      return true;
+    } catch (error) {
+      console.error("Error validando datos:", error);
+
+      Swal.fire({
+        title: "Error",
+        text: "No se pudo verificar tu información.",
+        icon: "error",
+      });
+
+      return false;
+    }
+  };
 
   // CORRECCIÓN AQUÍ: Pasamos el id de la solicitud para removerlo del estado
   const getInformationRequest = async (
@@ -32,7 +125,12 @@ function BankDashboard({ user }) {
     client_id,
   ) => {
     try {
-      console.log("Solicitando información para la solicitud ID:", client_request_id, lender_id, client_id); // Log para depuración
+      console.log(
+        "Solicitando información para la solicitud ID:",
+        client_request_id,
+        lender_id,
+        client_id,
+      ); // Log para depuración
       const rawToken = localStorage.getItem("token");
       const payload = parseJwt(rawToken);
 
@@ -125,7 +223,8 @@ function BankDashboard({ user }) {
   };
 
   const [modalConditionId, setModalConditionId] = useState(null);
-  const [paymentsModalConditionId, setPaymentsModalConditionId] = useState(null);
+  const [paymentsModalConditionId, setPaymentsModalConditionId] =
+    useState(null);
 
   const openConditionsForNotification = async (notification) => {
     try {
@@ -144,11 +243,19 @@ function BankDashboard({ user }) {
       } else if (res.data && res.data.lender_conditions_id) {
         setModalConditionId(res.data.lender_conditions_id);
       } else {
-        Swal.fire({ title: "No encontrado", text: "No se encontró condiciones para esta solicitud.", icon: "warning" });
+        Swal.fire({
+          title: "No encontrado",
+          text: "No se encontró condiciones para esta solicitud.",
+          icon: "warning",
+        });
       }
     } catch (err) {
       console.error("Error resolviendo condiciones:", err);
-      Swal.fire({ title: "Error", text: "No se pudo obtener las condiciones.", icon: "error" });
+      Swal.fire({
+        title: "Error",
+        text: "No se pudo obtener las condiciones.",
+        icon: "error",
+      });
     }
   };
 
@@ -165,12 +272,27 @@ function BankDashboard({ user }) {
       }
     };
 
+    validateProfileData();
     obtenerSolicitudes();
     obtenerNotificaciones();
   }, []);
 
   return (
     <div className="lender-container">
+      {!datachek && (
+        <div className="profile-alert">
+          <h3>⚠️ Completa tu perfil</h3>
+          <p>
+            Ya estás más cerca de obtener nuevas oportunidades de préstamo.
+            Completa tu información personal para desbloquear todas las
+            funciones.
+          </p>
+
+          <button className="btn-action" onClick={() => navigate("/profile")}>
+            Completar mis datos
+          </button>
+        </div>
+      )}
       <header className="lender-header">
         <div>
           <h1>Panel de Inversiones</h1>
@@ -183,7 +305,8 @@ function BankDashboard({ user }) {
       <section className="market-feed">
         <h2>Oportunidades de Préstamos</h2>
         <p className="offers-subtitle">
-          Descubre las solicitudes de financiamiento que se ajustan a tus criterios
+          Descubre las solicitudes de financiamiento que se ajustan a tus
+          criterios
         </p>
         {publications
           .filter(
@@ -198,17 +321,26 @@ function BankDashboard({ user }) {
                 </span>
                 <p>{solicitud.reason}</p>
                 <p>
-                  <button
-                    onClick={() => {
-                      getInformationRequest(
-                        solicitud.id,
-                        user.id,
-                        solicitud.user_id,
-                      );
-                    }}
-                  >
-                    Solicitar información
-                  </button>
+                  {datachek ? (
+                    <button
+                      onClick={() => {
+                        getInformationRequest(
+                          solicitud.id,
+                          user.id,
+                          solicitud.user_id,
+                        );
+                      }}
+                    >
+                      Solicitar información
+                    </button>
+                  ) : (
+                    <button
+                      className="btn-action"
+                      onClick={showProfileReminder}
+                    >
+                      Solicitar información
+                    </button>
+                  )}
                 </p>
               </div>
               <p className="publication-meta">
@@ -229,18 +361,19 @@ function BankDashboard({ user }) {
               <div key={notification.id} className="request-feed-card">
                 <div className="card-top">
                   <span className="amount-tag">
-                    {notification.state == 2 || notification.state == 3 ? (<h2>{notification.client_name}</h2>) : (
+                    {notification.state == 2 || notification.state == 3 ? (
+                      <h2>{notification.client_name}</h2>
+                    ) : (
                       <h2>Cliente anónimo</h2>
                     )}
-
                   </span>
                   <span className="amount-tag">
                     <p>
                       {notification.state == 2
                         ? "Ya puedes ver la información del cliente"
                         : notification.state == 3
-                        ? "Préstamo activo"
-                        : "Pendiente"}
+                          ? "Préstamo activo"
+                          : "Pendiente"}
                     </p>
                   </span>
                   <div>
@@ -262,68 +395,76 @@ function BankDashboard({ user }) {
                           Ver información
                         </Link>
                       </div>
+                    ) : notification.state == 0 ? (
+                      <div className="">
+                        <p>Visita programada</p>
+                        <button
+                          onClick={() =>
+                            navigate("/confirm-loan", {
+                              state: {
+                                lender_conditions_id:
+                                  notification.lender_conditions_id,
+                                notification_id: notification.id,
+                                client_request_id:
+                                  notification.client_request_id,
+                                client_id: notification.client_id,
+                                lender_id: user.id,
+                              },
+                            })
+                          }
+                        >
+                          Confirmar préstamo
+                        </button>
+                      </div>
                     ) : (
-                      notification.state == 0 ? (
-                        <div className="">
-                          <p>Visita programada</p>
-                          <button
-                            onClick={() =>
-                              navigate("/confirm-loan", {
-                                state: {
-                                  lender_conditions_id:
-                                    notification.lender_conditions_id,
-                                  notification_id: notification.id,
-                                  client_request_id: notification.client_request_id,
-                                  client_id: notification.client_id,
-                                  lender_id: user.id,
-                                },
-                              })
-                            }
-                          >
-                            Confirmar préstamo
-                          </button>
-                        </div>
-                      ) : (
-                        <div className="">
-                          <div>
-                            {notification.state == 3 ? (
-                              <>
-                                <div className="status-active">
-                                  <strong>Préstamo activo</strong>
-                                </div>
-                                <div style={{ display: 'inline-flex', gap: 8 }}>
-                                  <button
-                                    className="btn-action"
-                                    onClick={() => openConditionsForNotification(notification)}
-                                  >
-                                    Ver condiciones actuales
-                                  </button>
-                                  <button
-                                    className="btn-action"
-                                    onClick={() => setPaymentsModalConditionId({
-                                      lender_conditions_id: notification.lender_conditions_id,
-                                      request_id: notification.client_request_id || notification.request_id,
+                      <div className="">
+                        <div>
+                          {notification.state == 3 ? (
+                            <>
+                              <div className="status-active">
+                                <strong>Préstamo activo</strong>
+                              </div>
+                              <div style={{ display: "inline-flex", gap: 8 }}>
+                                <button
+                                  className="btn-action"
+                                  onClick={() =>
+                                    openConditionsForNotification(notification)
+                                  }
+                                >
+                                  Ver condiciones actuales
+                                </button>
+                                <button
+                                  className="btn-action"
+                                  onClick={() =>
+                                    setPaymentsModalConditionId({
+                                      lender_conditions_id:
+                                        notification.lender_conditions_id,
+                                      request_id:
+                                        notification.client_request_id ||
+                                        notification.request_id,
                                       lender_id: user.id,
-                                    })}
-                                  >
-                                    Registrar pago
-                                  </button>
-                                </div>
-                              </>
-                            ) : (
-                              <button disabled className="btn-waiting">
-                                Es espera a que el cliente acepte su solicitud
-                              </button>
-                            )}
-                          </div>
+                                    })
+                                  }
+                                >
+                                  Registrar pago
+                                </button>
+                              </div>
+                            </>
+                          ) : (
+                            <button disabled className="btn-waiting">
+                              Es espera a que el cliente acepte su solicitud
+                            </button>
+                          )}
                         </div>
-                      )
+                      </div>
                     )}
                   </div>
                 </div>
                 <p className="publication-meta">
                   Publicada el{" "}
-                  {new Date(notification.created_at).toLocaleDateString("es-DO")}
+                  {new Date(notification.created_at).toLocaleDateString(
+                    "es-DO",
+                  )}
                 </p>
               </div>
             ))

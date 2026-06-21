@@ -45,7 +45,7 @@ const login = async (req, res) => {
             role: user.role,
             photo: user.profile_image
               ? `http://localhost:3001/uploads/${user.profile_image}`
-              : null,
+              : 'http://localhost:3001/uploads/avatar.avif',
           },
           process.env.JWT_SECRET || "Stack",
           { expiresIn: "1h" },

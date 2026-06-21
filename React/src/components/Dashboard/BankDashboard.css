@@ -4,6 +4,46 @@
   padding: 2rem;
 }
 
+
+
+/* cita de alventecia */
+.profile-alert {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1.5rem;
+
+  background: #fff8e1;
+  border: 1px solid #ffd54f;
+  border-left: 6px solid #ffb300;
+
+  padding: 1.5rem;
+  margin-bottom: 2rem;
+
+  border-radius: 14px;
+  box-shadow: 0 6px 18px rgba(16, 24, 40, 0.04);
+}
+
+.profile-alert h3 {
+  margin: 0 0 0.5rem 0;
+  color: #b26a00;
+  font-size: 1.1rem;
+}
+
+.profile-alert p {
+  margin: 0;
+  color: #5f4b00;
+  line-height: 1.5;
+}
+
+.profile-alert .btn-action {
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+/* Encabezado del dashboard */
+
+
+
 .lender-header {
   display: flex;
   justify-content: space-between;
